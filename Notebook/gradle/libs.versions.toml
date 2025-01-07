@@ -1,0 +1,65 @@
+[versions]
+agp = "8.7.3"
+androidStompOverWebsocket = "1.0.1"
+gson = "2.11.0"
+kotlin = "1.9.24"
+coreKtx = "1.10.1"
+junit = "4.13.2"
+junitVersion = "1.1.5"
+espressoCore = "3.5.1"
+appcompat = "1.6.1"
+ktorClientAndroid = "3.0.2"
+ktorClientWebsockets = "3.2.0"
+ktorClientWebsocketsVersion = "1.6.4"
+material = "1.10.0"
+activity = "1.8.0"
+constraintlayout = "2.1.4"
+okhttp = "4.10.0"
+okhttpVersion = "3.11.0"
+stompprotocolandroid = "1.6.4"
+
+[libraries]
+android-stomp-over-websocket = { module = "com.github.MobileDews:Android-Stomp-Over-Websocket", version.ref = "androidStompOverWebsocket" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+io-ktor-ktor-serialization-kotlinx-json-jvm = { module = "io.ktor:ktor-serialization-kotlinx-json-jvm" }
+io-ktor-ktor-server-content-negotiation-jvm = { module = "io.ktor:ktor-server-content-negotiation-jvm" }
+io-ktor-ktor-server-core-jvm = { module = "io.ktor:ktor-server-core-jvm" }
+io-ktor-ktor-server-host-common-jvm = { module = "io.ktor:ktor-server-host-common-jvm" }
+io-ktor-ktor-server-netty-jvm = { module = "io.ktor:ktor-server-netty-jvm" }
+io-ktor-ktor-server-websockets-jvm = { module = "io.ktor:ktor-server-websockets-jvm" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio" }
+ktor-client-core = { module = "io.ktor:ktor-client-core" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktorClientWebsockets" }
+ktor-client-websockets-v164 = { module = "io.ktor:ktor-client-websockets", version.ref = "ktorClientWebsocketsVersion" }
+ktor-ktor-client-websockets = { module = "io.ktor:ktor-client-websockets" }
+ktor-ktor-serialization-kotlinx-json-jvm = { module = "io.ktor:ktor-serialization-kotlinx-json-jvm" }
+ktor-ktor-server-content-negotiation-jvm = { module = "io.ktor:ktor-server-content-negotiation-jvm" }
+ktor-ktor-server-core-jvm = { module = "io.ktor:ktor-server-core-jvm" }
+ktor-ktor-server-netty-jvm = { module = "io.ktor:ktor-server-netty-jvm" }
+ktor-ktor-server-websockets-jvm = { module = "io.ktor:ktor-server-websockets-jvm" }
+ktor-ktor-server-host-common-jvm = { module = "io.ktor:ktor-server-host-common-jvm" }
+ktor-serialization-kotlinx-json-jvm = { module = "io.ktor:ktor-serialization-kotlinx-json-jvm" }
+ktor-server-content-negotiation-jvm = { module = "io.ktor:ktor-server-content-negotiation-jvm" }
+ktor-server-core-jvm = { module = "io.ktor:ktor-server-core-jvm" }
+ktor-server-host-common-jvm = { module = "io.ktor:ktor-server-host-common-jvm" }
+ktor-server-netty-jvm = { module = "io.ktor:ktor-server-netty-jvm" }
+ktor-server-websockets-jvm = { module = "io.ktor:ktor-server-websockets-jvm" }
+logback-classic = { module = "ch.qos.logback:logback-classic" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+okhttp-v3110 = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttpVersion" }
+stompprotocolandroid = { module = "com.github.NaikSoftware:StompProtocolAndroid", version.ref = "stompprotocolandroid" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+

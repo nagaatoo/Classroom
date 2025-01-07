@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: Classroom
+
+server:
+  port: 8081
+
+logging:
+  level:
+    org.springframework.web.servlet.DispatcherServlet: DEBUG
+    org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor: DEBUG

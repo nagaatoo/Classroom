@@ -1,0 +1,86 @@
+package ru.numbdev.classroom.service;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.web.socket.WebSocketSession;
+import ru.numbdev.classroom.dto.Command;
+import ru.numbdev.classroom.dto.LineBlock;
+import ru.numbdev.classroom.dto.CommandToRoom;
+import ru.numbdev.classroom.dto.Role;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class CalculationService {
+
+    private final Map<String, Future<?>> rooms = new ConcurrentHashMap<>();
+    private final SessionService sessionService;
+    private final ContainerService containerService;
+
+    public void registerRoomIfAbsent(WebSocketSession session) {
+        sessionService.addSession(session);
+        var info = sessionService.getSessionInfo(session);
+        rooms.computeIfAbsent(info.getRoomId(), roomId -> {
+            return Executors.newVirtualThreadPerTaskExecutor().submit(() -> {
+                while (true) {
+                    log.info("Do job for " + roomId);
+                    try {
+                        Thread.sleep(50);
+                        doTick(roomId);
+                    } catch (Exception e) {
+                        log.error("Job error", e);
+                    }
+                }
+            });
+        });
+        log.info("Test");
+    }
+
+    public void removeFromRoom(WebSocketSession session) {
+        var info = sessionService.getSessionInfo(session);
+        sessionService.removeSession(session);
+        if (sessionService.roomIsEmpty(info.getRoomId())) {
+            rooms.computeIfPresent(info.getRoomId(), (roomId, job) -> {
+                job.cancel(true);
+                return job;
+            });
+
+            rooms.remove(info.getRoomId());
+        }
+    }
+
+    public void addDiff(WebSocketSession session, LineBlock block) {
+        var info = sessionService.getSessionInfo(session);
+        containerService.addLine(info, block);
+    }
+
+    public void sendClean(WebSocketSession session) {
+        var info = sessionService.getSessionInfo(session);
+        containerService.clean(info);
+        sessionService.sendToRoom(
+                info.getRoomId(),
+                CommandToRoom.builder()
+                        .command(info.getRole() == Role.TEACHER ? Command.TEACHER_CLEAN : Command.CLEAN)
+                        .build()
+        );
+    }
+
+    private void doTick(String roomId) {
+        var diffs = containerService.sortAndCommit(roomId);
+        if (diffs.getDiff() != null) {
+            sessionService.sendToRoom(
+                    roomId,
+                    CommandToRoom.builder()
+                            .command(Command.PRINT)
+                            .lines(diffs.getDiff())
+                            .build()
+            );
+        }
+    }
+}
