@@ -39,8 +39,6 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     private var isClear = false
 
     // Current line witch drawing
-//    private var teacherCurrentLine: ServiceLine? = null
-//    private var teammateCurrentLine: ServiceLine? = null
     private var currentLine: ServiceLine? = null
 
     // Store circles to draw each time the user touches down
@@ -73,6 +71,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         println("Clean")
         teacherPoints.clear()
         myPoints.clear()
+        teammatePoints.clear()
         isClear = true
         invalidate()
     }
@@ -95,6 +94,8 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                     }
                 }
             }
+
+        postInvalidate()
     }
 
     private fun addAndPrint(line: Line, pen: Paint, targetPoints: MutableList<ServiceLine>) {
@@ -159,9 +160,9 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
             isClear = false
         }
 
-        drawLine(canvas, teacherPoints)
-        drawLine(canvas, myPoints)
         drawLine(canvas, teammatePoints)
+        drawLine(canvas, myPoints)
+        drawLine(canvas, teacherPoints)
     }
 
     private fun drawLine(canvas: Canvas, line: MutableList<ServiceLine>) {
