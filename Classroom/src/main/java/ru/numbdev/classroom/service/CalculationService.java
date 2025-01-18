@@ -29,7 +29,6 @@ public class CalculationService {
         rooms.computeIfAbsent(info.getRoomId(), roomId -> {
             return Executors.newVirtualThreadPerTaskExecutor().submit(() -> {
                 while (true) {
-                    log.info("Do job for " + roomId);
                     try {
                         Thread.sleep(50);
                         doTick(roomId);
@@ -39,7 +38,6 @@ public class CalculationService {
                 }
             });
         });
-        log.info("Test");
     }
 
     public void removeFromRoom(WebSocketSession session) {
