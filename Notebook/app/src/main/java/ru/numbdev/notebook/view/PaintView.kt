@@ -131,6 +131,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     }
 
     private fun setup() {
+        setBackgroundColor(Color.WHITE)
         GlobalScope.launch {
             RoomClient.getSession()?.incoming?.consumeEach {
                 val currentCommand =
