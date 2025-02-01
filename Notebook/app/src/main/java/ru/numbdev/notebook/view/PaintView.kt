@@ -38,6 +38,10 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     // Solution for clear
     private var isClear = false
 
+    private var notePaint: Paint = initNotePaint()
+    private val noteLinesX: MutableList<Path> = mutableListOf()
+    private val noteLinesY: MutableList<Path> = mutableListOf()
+
     // Current line witch drawing
 //    private var teacherCurrentLine: ServiceLine? = null
 //    private var teammateCurrentLine: ServiceLine? = null
@@ -52,6 +56,50 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         isFocusable = true;
         setFocusableInTouchMode(true);
         setup()
+        viewTreeObserver.addOnGlobalLayoutListener { setupNote() }
+    }
+
+    private fun setup() {
+        GlobalScope.launch {
+            RoomClient.getSession()?.incoming?.consumeEach {
+                val currentCommand =
+                    gson.fromJson(it.data.toString(Charsets.UTF_8), CommandToRoom::class.java)
+                when (currentCommand.command) {
+                    Command.CLEAN -> cleanState()
+                    Command.PRINT -> printState(currentCommand.lines)
+                    Command.TEACHER_CLEAN -> cleanState()
+                    else -> {}
+                }
+                println("Incoming finished")
+            }
+        }
+    }
+
+    private fun setupNote() {
+        for (i in 0 .. width step 100) {
+            val newPathX = Path()
+            newPathX.moveTo(0F, i.toFloat())
+            newPathX.lineTo(height.toFloat(), i.toFloat())
+            noteLinesX.add(newPathX)
+
+            val newPathY = Path()
+            newPathY.moveTo(i.toFloat(), 0F)
+            newPathY.lineTo(i.toFloat(), height.toFloat())
+            noteLinesY.add(newPathY)
+        }
+    }
+
+    private fun initNotePaint(): Paint {
+        val drawPaint = Paint()
+        drawPaint.style = Paint.Style.FILL;
+        drawPaint.setColor(Color.BLACK);
+        drawPaint.isAntiAlias = true;
+        drawPaint.strokeWidth = 2F;
+        drawPaint.style = Paint.Style.STROKE;
+        drawPaint.strokeJoin = Paint.Join.ROUND;
+        drawPaint.strokeCap = Paint.Cap.ROUND;
+
+        return drawPaint
     }
 
     fun changeTool() {
@@ -129,22 +177,6 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         }
     }
 
-    private fun setup() {
-        GlobalScope.launch {
-            RoomClient.getSession()?.incoming?.consumeEach {
-                val currentCommand =
-                    gson.fromJson(it.data.toString(Charsets.UTF_8), CommandToRoom::class.java)
-                when (currentCommand.command) {
-                    Command.CLEAN -> cleanState()
-                    Command.PRINT -> printState(currentCommand.lines)
-                    Command.TEACHER_CLEAN -> cleanState()
-                    else -> {}
-                }
-                println("Incoming finished")
-            }
-        }
-    }
-
     private fun setupPenPaint() {
         toolType = ToolType.PEN
     }
@@ -159,9 +191,18 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
             isClear = false
         }
 
+        printNotebook(canvas)
+
         drawLine(canvas, teacherPoints)
         drawLine(canvas, myPoints)
         drawLine(canvas, teammatePoints)
+    }
+
+    private fun printNotebook(canvas: Canvas) {
+        for (i in 0 .. noteLinesX.size - 1) {
+            canvas.drawPath(noteLinesX.get(i), notePaint)
+            canvas.drawPath(noteLinesY.get(i), notePaint)
+        }
     }
 
     private fun drawLine(canvas: Canvas, line: MutableList<ServiceLine>) {
