@@ -37,6 +37,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
 
     // Solution for clear
     private var isClear = false
+    private val userId = UUID.randomUUID().toString()
 
     private var notePaint: Paint = initNotePaint()
     private val noteLinesX: MutableList<Path> = mutableListOf()
@@ -60,6 +61,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     private fun setup() {
         setBackgroundColor(Color.WHITE)
         GlobalScope.launch {
+            RoomClient.initClient(userId)
             RoomClient.getSession()?.incoming?.consumeEach {
                 val currentCommand =
                     gson.fromJson(it.data.toString(Charsets.UTF_8), CommandToRoom::class.java)
@@ -130,6 +132,9 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
             .entries
             .forEach { es ->
                 val line = es.value
+                if (userId == line.userIdOwner) {
+                    return;
+                }
 
                 when (line.role) {
                     Role.TEACHER -> {
@@ -225,7 +230,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                     if (toolType == ToolType.PEN) createPenPaint() else createEraserPaint(),
                     false
                 )
-//                currentLine?.path?.moveTo(touchX, touchY)
+                currentLine?.path?.moveTo(touchX, touchY)
                 myPoints.add(currentLine!!)
 
                 sendToSession(touchX, touchY, LineOrder.FIRST)
@@ -233,8 +238,8 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
 
             MotionEvent.ACTION_MOVE -> { // Draws line between last point and this point
                 println("$touchX : $touchY")
-//                currentLine?.path?.lineTo(touchX, touchY)
-                currentLine?.line?.points?.add(fillDrawPoint(touchX, touchY, LineOrder.MIDDLE))
+                currentLine?.path?.lineTo(touchX, touchY)
+//                currentLine?.line?.points?.add(fillDrawPoint(touchX, touchY, LineOrder.MIDDLE))
                 sendToSession(touchX, touchY, LineOrder.MIDDLE)
             }
 
@@ -288,6 +293,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     ): Line {
         return Line(
             currentLineId.toString(),
+            userId,
             Role.STUDENT,
             toolType,
             mutableListOf(fillDrawPoint(touchX, touchY, order))

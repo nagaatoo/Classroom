@@ -24,6 +24,7 @@ class RoomClient {
 
     companion object {
 
+        private var userId: String? = null
         private val roomId = UUID.fromString("7345b757-fadb-4c98-91fb-cbf5f51d7ad9");
         private var session: DefaultClientWebSocketSession? = null
 
@@ -40,6 +41,7 @@ class RoomClient {
                     path = "/chat",
                     {
                         header("room_id", roomId.toString())
+                        header("user_id", userId)
                     }
                 )
             } catch (e: RuntimeException) {
@@ -57,6 +59,11 @@ class RoomClient {
                     println("ping")
                 }
             }, 10000, 1000)
+        }
+
+        suspend fun initClient(id: String) {
+            userId = id
+            initClient()
         }
 
         suspend fun send(line: BaseCommand) {
