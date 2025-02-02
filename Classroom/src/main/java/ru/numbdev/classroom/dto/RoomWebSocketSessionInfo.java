@@ -8,5 +8,6 @@ import lombok.Getter;
 public class RoomWebSocketSessionInfo {
     private String sessionId;
     private String roomId;
+    private String userId;
     private Role role;
 }

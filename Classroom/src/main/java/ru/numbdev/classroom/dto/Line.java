@@ -13,6 +13,7 @@ import lombok.Setter;
 public class Line {
     private UUID id;
     private String sessionIdOwner;
+    private String userIdOwner;
     private Role role;
     private ToolType type;
     private List<Point> points;
@@ -22,6 +23,7 @@ public class Line {
         return Line.builder()
                 .id(id)
                 .sessionIdOwner(sessionIdOwner)
+                .userIdOwner(userIdOwner)
                 .role(role)
                 .created(created)
                 .type(type)

@@ -46,6 +46,7 @@ public class SimpleContainerService implements ContainerService {
                             return Line.builder()
                                     .id(UUID.fromString(k))
                                     .sessionIdOwner(info.getSessionId())
+                                    .userIdOwner(info.getUserId())
                                     .role(info.getRole())
                                     .created(block.getPoint().getTimestamp())
                                     .type(block.getType())
@@ -105,6 +106,7 @@ public class SimpleContainerService implements ContainerService {
             for (Map.Entry<String, Line> esLine : es.getValue().entrySet()) {
                 var points = esLine.getValue().getPoints();
                 if (CollectionUtils.isEmpty(points)) {
+                    es.getValue().remove(esLine.getKey());
                     continue;
                 }
 

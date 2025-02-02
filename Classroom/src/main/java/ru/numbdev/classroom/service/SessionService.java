@@ -23,6 +23,7 @@ import ru.numbdev.classroom.dto.RoomWebSocketSessionInfo;
 public class SessionService {
 
     private static final String ROOM_ID_HEADER = "room_id";
+    private static final String USER_ID_HEADER = "user_id";
     private final Gson gson;
 
     private final Map<String, List<WebSocketSession>> sessionsInRooms = new ConcurrentHashMap<>();
@@ -30,6 +31,10 @@ public class SessionService {
 
     public String getRoomIdFromHeader(WebSocketSession session) {
         return session.getHandshakeHeaders().get(ROOM_ID_HEADER).getFirst();
+    }
+
+    public String getUserIdFromHeader(WebSocketSession session) {
+        return session.getHandshakeHeaders().get(USER_ID_HEADER).getFirst();
     }
 
     public void addSession(WebSocketSession session) {
@@ -87,6 +92,7 @@ public class SessionService {
         return RoomWebSocketSessionInfo.builder()
                 .sessionId(session.getId())
                 .roomId(getRoomIdFromHeader(session))
+                .userId(getUserIdFromHeader(session))
                 .role(getRole(session))
                 .build();
     }

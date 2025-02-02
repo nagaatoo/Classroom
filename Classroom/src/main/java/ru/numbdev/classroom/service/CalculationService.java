@@ -2,8 +2,6 @@ package ru.numbdev.classroom.service;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +17,7 @@ import ru.numbdev.classroom.dto.Role;
 @RequiredArgsConstructor
 public class CalculationService {
 
-    private final Map<String, Future<?>> rooms = new ConcurrentHashMap<>();
+    private final Map<String, Thread> rooms = new ConcurrentHashMap<>();
     private final SessionService sessionService;
     private final ContainerService containerService;
 
@@ -27,16 +25,21 @@ public class CalculationService {
         sessionService.addSession(session);
         var info = sessionService.getSessionInfo(session);
         rooms.computeIfAbsent(info.getRoomId(), roomId -> {
-            return Executors.newVirtualThreadPerTaskExecutor().submit(() -> {
-                while (true) {
-                    try {
-                        Thread.sleep(50);
-                        doTick(roomId);
-                    } catch (Exception e) {
-                        log.error("Job error", e);
+            return Thread.ofVirtual().start(
+                    () -> {
+                        while (true) {
+                            try {
+                                Thread.sleep(50);
+                                doTick(roomId);
+                                log.info("foo" + Thread.currentThread().getName());
+                            } catch (InterruptedException e) {
+                                return;
+                            } catch (Exception e) {
+                                log.error("Job error", e);
+                            }
+                        }
                     }
-                }
-            });
+            );
         });
     }
 
@@ -45,7 +48,7 @@ public class CalculationService {
         sessionService.removeSession(session);
         if (sessionService.roomIsEmpty(info.getRoomId())) {
             rooms.computeIfPresent(info.getRoomId(), (roomId, job) -> {
-                job.cancel(true);
+                job.interrupt();
                 return job;
             });
 

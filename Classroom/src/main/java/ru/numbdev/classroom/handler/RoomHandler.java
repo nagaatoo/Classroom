@@ -58,6 +58,7 @@ public class RoomHandler implements WebSocketHandler {
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
         log.info("Connection error", exception);
+        calculationService.removeFromRoom(session);
     }
 
     @Override
