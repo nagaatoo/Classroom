@@ -41,6 +41,14 @@ public class CalculationService {
                     }
             );
         });
+
+        sessionService.sendInitState(
+                info,
+                CommandToRoom.builder()
+                        .command(Command.INIT)
+                        .lines(containerService.getCurrent(info.getRoomId()).getDiff())
+                        .build()
+        );
     }
 
     public void removeFromRoom(WebSocketSession session) {

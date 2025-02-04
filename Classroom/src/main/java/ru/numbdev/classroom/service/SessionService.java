@@ -74,6 +74,24 @@ public class SessionService {
         return CollectionUtils.isEmpty(sessionsInRooms.get(roomId));
     }
 
+    public void sendInitState(RoomWebSocketSessionInfo session, CommandToRoom message) {
+        try {
+            var current = sessionsInRooms
+                    .get(session.getRoomId())
+                    .stream()
+                    .filter(s -> s.getId().equals(session.getSessionId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (current != null) {
+                current.sendMessage(new TextMessage(gson.toJson(message)));
+            }
+
+        } catch (Exception e) {
+            log.error(e);
+        }
+    }
+
     public void sendToRoom(String roomId, CommandToRoom message) {
         if (sessionsInRooms.isEmpty()) {
             return;

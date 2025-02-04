@@ -27,33 +27,36 @@ public class SimpleContainerService implements ContainerService {
     @Override
     public void addLine(RoomWebSocketSessionInfo info, LineBlock block) {
         cache.computeIfAbsent(info.getRoomId(), k -> new ConcurrentHashMap<>());
-        cache
-                .get(info.getRoomId())
-                .computeIfPresent(
-                        block.getId(),
-                        (k, v) -> {
-                            v.getPoints().add(block.getPoint());
-                            return v;
-                        }
-                );
-        cache
-                .get(info.getRoomId())
-                .computeIfAbsent(
-                        block.getId(),
-                        k -> {
-                            List<Point> points = new ArrayList<>();
-                            points.add(block.getPoint());
-                            return Line.builder()
-                                    .id(UUID.fromString(k))
-                                    .sessionIdOwner(info.getSessionId())
-                                    .userIdOwner(info.getUserId())
-                                    .role(info.getRole())
-                                    .created(block.getPoint().getTimestamp())
-                                    .type(block.getType())
-                                    .points(points)
-                                    .build();
-                        }
-                );
+        var room = cache.get(info.getRoomId());
+        synchronized (room) {
+            cache
+                    .get(info.getRoomId())
+                    .computeIfPresent(
+                            block.getId(),
+                            (k, v) -> {
+                                v.getPoints().add(block.getPoint());
+                                return v;
+                            }
+                    );
+            cache
+                    .get(info.getRoomId())
+                    .computeIfAbsent(
+                            block.getId(),
+                            k -> {
+                                List<Point> points = new ArrayList<>();
+                                points.add(block.getPoint());
+                                return Line.builder()
+                                        .id(UUID.fromString(k))
+                                        .sessionIdOwner(info.getSessionId())
+                                        .userIdOwner(info.getUserId())
+                                        .role(info.getRole())
+                                        .created(block.getPoint().getTimestamp())
+                                        .type(block.getType())
+                                        .points(points)
+                                        .build();
+                            }
+                    );
+        }
     }
 
     @Override
@@ -63,14 +66,23 @@ public class SimpleContainerService implements ContainerService {
             return;
         }
 
-        List<String> keysForRemove = new ArrayList<>();
         for (Map.Entry<String, Line> es : lines.entrySet()) {
-            if (es.getValue().getSessionIdOwner().equals(info.getSessionId())) {
-                keysForRemove.add(es.getKey());
+            var line = es.getValue();
+            if (line.getUserIdOwner().equals(info.getUserId())) {
+                lines.remove(line.getId().toString());
             }
         }
+    }
 
-        keysForRemove.forEach(cache::remove);
+    @Override
+    public DiffToRoom getCurrent(String roomId) {
+        var room = cache.get(roomId);
+        if (room == null) {
+            return DiffToRoom.builder().build();
+        }
+        synchronized (room) {
+            return DiffToRoom.builder().diff(room).build();
+        }
     }
 
     @Override
@@ -100,13 +112,13 @@ public class SimpleContainerService implements ContainerService {
                 .build();
     }
 
-    @Scheduled(fixedRate = 1000)
+//    @Scheduled(fixedRate = 1000)
     private void clean() {
         for (Map.Entry<String, Map<String, Line>> es : cache.entrySet()) {
             for (Map.Entry<String, Line> esLine : es.getValue().entrySet()) {
                 var points = esLine.getValue().getPoints();
                 if (CollectionUtils.isEmpty(points)) {
-                    es.getValue().remove(esLine.getKey());
+//                    es.getValue().remove(esLine.getKey());
                     continue;
                 }
 

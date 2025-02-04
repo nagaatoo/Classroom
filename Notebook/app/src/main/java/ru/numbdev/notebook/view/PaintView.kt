@@ -66,8 +66,9 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 val currentCommand =
                     gson.fromJson(it.data.toString(Charsets.UTF_8), CommandToRoom::class.java)
                 when (currentCommand.command) {
+                    Command.INIT -> printState(currentCommand.lines, true)
                     Command.CLEAN -> cleanState()
-                    Command.PRINT -> printState(currentCommand.lines)
+                    Command.PRINT -> printState(currentCommand.lines, false)
                     Command.TEACHER_CLEAN -> cleanState()
                     else -> {}
                 }
@@ -127,12 +128,16 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         invalidate()
     }
 
-    private fun printState(lines: Map<String, Line>) {
+    private fun printState(lines: Map<String, Line>?, isInit: Boolean) {
+        if (lines == null) {
+            return
+        }
+
         lines
             .entries
             .forEach { es ->
                 val line = es.value
-                if (userId == line.userIdOwner) {
+                if (!isInit && userId == line.userIdOwner) {
                     return;
                 }
 

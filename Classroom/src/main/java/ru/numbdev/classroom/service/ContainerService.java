@@ -7,5 +7,7 @@ import ru.numbdev.classroom.dto.RoomWebSocketSessionInfo;
 public interface ContainerService {
     void addLine(RoomWebSocketSessionInfo info, LineBlock block);
     void clean(RoomWebSocketSessionInfo info);
+
+    DiffToRoom getCurrent(String roomId);
     DiffToRoom sortAndCommit(String roomId);
 }
