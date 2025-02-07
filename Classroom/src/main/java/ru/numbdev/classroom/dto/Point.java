@@ -11,6 +11,6 @@ public class Point {
     private Float x;
     private Float y;
     private Long timestamp;
-    private boolean forDelete;
+    private boolean wasReaded;
     private LineOrder order;
 }

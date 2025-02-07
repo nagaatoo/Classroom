@@ -1,32 +1,25 @@
 package ru.numbdev.classroom.service;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import ru.numbdev.classroom.dto.DiffToRoom;
-import ru.numbdev.classroom.dto.Line;
-import ru.numbdev.classroom.dto.LineBlock;
-import ru.numbdev.classroom.dto.Point;
-import ru.numbdev.classroom.dto.RoomWebSocketSessionInfo;
+import ru.numbdev.classroom.dto.*;
 
 @Service
 @RequiredArgsConstructor
 public class SimpleContainerService implements ContainerService {
 
-    private final Map<String, Map<String, Line>> cache = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, Line>> cache = new HashMap<>();
 
     @Override
     public void addLine(RoomWebSocketSessionInfo info, LineBlock block) {
-        cache.computeIfAbsent(info.getRoomId(), k -> new ConcurrentHashMap<>());
+        cache.computeIfAbsent(info.getRoomId(), k -> new HashMap<>());
         var room = cache.get(info.getRoomId());
         synchronized (room) {
             cache
@@ -34,7 +27,11 @@ public class SimpleContainerService implements ContainerService {
                     .computeIfPresent(
                             block.getId(),
                             (k, v) -> {
-                                v.getPoints().add(block.getPoint());
+                                var newPoint = block.getPoint();
+                                v.getPoints().add(newPoint);
+                                if (newPoint.getOrder() == LineOrder.LAST) {
+                                    v.setFinished(true);
+                                }
                                 return v;
                             }
                     );
@@ -60,17 +57,23 @@ public class SimpleContainerService implements ContainerService {
     }
 
     @Override
-    public void clean(RoomWebSocketSessionInfo info) {
+    public Map<String, Line> clean(RoomWebSocketSessionInfo info) {
         Map<String, Line> lines = cache.getOrDefault(info.getRoomId(), Map.of());
         if (lines.isEmpty()) {
-            return;
+            return Map.of();
         }
 
-        for (Map.Entry<String, Line> es : lines.entrySet()) {
-            var line = es.getValue();
-            if (line.getUserIdOwner().equals(info.getUserId())) {
-                lines.remove(line.getId().toString());
+        synchronized (lines) {
+            Map<String, Line> deletedLines = new HashMap<>();
+            for (Map.Entry<String, Line> es : lines.entrySet()) {
+                var line = es.getValue();
+                if (line.getUserIdOwner().equals(info.getUserId())) {
+                    deletedLines.put(line.getId().toString(), line);
+                    line.setDeleted(true);
+                }
             }
+
+            return deletedLines;
         }
     }
 
@@ -94,17 +97,31 @@ public class SimpleContainerService implements ContainerService {
         }
 
         Map<String, Line> result = new HashMap<>();
-        for (Map.Entry<String, Line> es : current.entrySet()) {
-            var sortedPoints = es
-                    .getValue()
-                    .getPoints()
-                    .stream()
-                    .filter(p -> !p.isForDelete())
-                    .sorted(Comparator.comparing(Point::getTimestamp))
-                    .peek(p -> p.setForDelete(true))
-                    .toList();
+        for (Map.Entry<String, Line> keyWithLine : current.entrySet()) {
+            var idLine = keyWithLine.getKey();
+            var line = keyWithLine.getValue();
+            if (line.isDeleted()) {
+                continue;
+            }
 
-            result.put(es.getKey(), es.getValue().cloneLine().setPoints(sortedPoints));
+            List<Point> targetPoints = line.getPoints();
+            if (line.isWasReaded()) {
+                continue;
+            }
+
+            List<Point> sortedPoints = new ArrayList<>();
+            for (int i = line.getLastReadedPointId(); i <= targetPoints.size() - 1; i++) {
+                var point = targetPoints.get(i);
+                sortedPoints.add(point);
+                point.setWasReaded(true);
+                line.setLastReadedPointId(i);
+            }
+
+            if (targetPoints.getLast() != null && targetPoints.getLast().isWasReaded()) {
+                line.setWasReaded(true);
+            }
+
+            result.put(idLine, line.cloneLine(sortedPoints));
         }
 
         return DiffToRoom.builder()
@@ -112,23 +129,23 @@ public class SimpleContainerService implements ContainerService {
                 .build();
     }
 
-//    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedRate = 1000)
     private void clean() {
-        for (Map.Entry<String, Map<String, Line>> es : cache.entrySet()) {
-            for (Map.Entry<String, Line> esLine : es.getValue().entrySet()) {
-                var points = esLine.getValue().getPoints();
-                if (CollectionUtils.isEmpty(points)) {
-//                    es.getValue().remove(esLine.getKey());
-                    continue;
-                }
+        for (Map.Entry<String, Map<String, Line>> rooms : cache.entrySet()) {
+             synchronized (rooms.getValue()) {
+                 var room = rooms.getValue();
 
-                for (int i = 0; i < points.size(); i++) {
-                    var point = points.get(i);
-                    if (point.isForDelete()) {
-                        points.remove(point);
-                    }
-                }
-            }
+                 List<String> keysForDelete = new ArrayList<>();
+                 synchronized (room) {
+                     for (Map.Entry<String, Line> keyWithLine : room.entrySet()) {
+                         if (keyWithLine.getValue().isDeleted()) {
+                             keysForDelete.add(keyWithLine.getKey());
+                         }
+                     }
+
+                     keysForDelete.forEach(room::remove);
+                 }
+             }
         }
     }
 }

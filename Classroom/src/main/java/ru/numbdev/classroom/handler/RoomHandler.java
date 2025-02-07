@@ -12,7 +12,7 @@ import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
 import ru.numbdev.classroom.dto.Command;
 import ru.numbdev.classroom.dto.CommandFromRoom;
-import ru.numbdev.classroom.service.CalculationService;
+import ru.numbdev.classroom.service.RoomService;
 
 @Slf4j
 @Component
@@ -20,11 +20,11 @@ import ru.numbdev.classroom.service.CalculationService;
 public class RoomHandler implements WebSocketHandler {
 
     private final Gson gson;
-    private final CalculationService calculationService;
+    private final RoomService roomService;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        calculationService.registerRoomIfAbsent(session);
+        roomService.registerRoomIfAbsent(session);
     }
 
     @Override
@@ -45,11 +45,11 @@ public class RoomHandler implements WebSocketHandler {
         switch (command.getCommand()) {
             case PRINT -> {
                 var line = command.getBlock();
-                calculationService.addDiff(session, line);
+                roomService.addDiff(session, line);
                 log.info("Do print for :" + session.getId());
             }
             case CLEAN -> {
-                calculationService.sendClean(session);
+                roomService.sendClean(session);
                 log.info("Do clean for: " + session.getId());
             }
         }
@@ -58,13 +58,13 @@ public class RoomHandler implements WebSocketHandler {
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
         log.info("Connection error", exception);
-        calculationService.removeFromRoom(session);
+        roomService.removeFromRoom(session);
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         log.info("Connection error");
-        calculationService.removeFromRoom(session);
+        roomService.removeFromRoom(session);
     }
 
     @Override

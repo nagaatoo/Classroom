@@ -19,7 +19,12 @@ public class Line {
     private List<Point> points;
     private Long created;
 
-    public Line cloneLine() {
+    private transient boolean isFinished;
+    private transient boolean isDeleted;
+    private transient boolean wasReaded;
+    private transient int lastReadedPointId = 0;
+
+    public Line cloneLine(List<Point> newPoints) {
         return Line.builder()
                 .id(id)
                 .sessionIdOwner(sessionIdOwner)
@@ -27,7 +32,7 @@ public class Line {
                 .role(role)
                 .created(created)
                 .type(type)
-                .points(points)
+                .points(newPoints)
                 .build();
     }
 }
