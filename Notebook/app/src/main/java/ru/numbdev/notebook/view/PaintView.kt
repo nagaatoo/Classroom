@@ -38,6 +38,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     // Solution for clear
     private var isClear = false
     private val userId = UUID.randomUUID().toString()
+    private var currentRole: Role? = null
 
     private var notePaint: Paint = initNotePaint()
     private val noteLinesX: MutableList<Path> = mutableListOf()
@@ -66,10 +67,13 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 val currentCommand =
                     gson.fromJson(it.data.toString(Charsets.UTF_8), CommandToRoom::class.java)
                 when (currentCommand.command) {
-                    Command.INIT -> printState(currentCommand.lines, true)
-                    Command.CLEAN -> cleanState()
-                    Command.PRINT -> printState(currentCommand.lines, false)
-                    Command.TEACHER_CLEAN -> cleanState()
+                    Command.INIT -> {
+                        doPrintState(currentCommand.lines, true)
+                        currentRole = currentCommand.role
+                    }
+                    Command.CLEAN -> doCleanLines(currentCommand.lines)
+                    Command.PRINT -> doPrintState(currentCommand.lines, false)
+                    Command.TEACHER_CLEAN -> doTeacherCleanLines(currentCommand.lines)
                     else -> {}
                 }
                 println("Incoming finished")
@@ -121,14 +125,43 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
 
     private fun cleanState() {
         println("Clean")
-        teacherPoints.clear()
         myPoints.clear()
-        teammatePoints.clear()
         isClear = true
         invalidate()
     }
 
-    private fun printState(lines: Map<String, Line>?, isInit: Boolean) {
+    private fun doCleanLines(linesForDelete: Map<String, Line>?) {
+        if (linesForDelete == null) {
+            return
+        }
+
+        if (linesForDelete.values.firstOrNull()?.userIdOwner == userId) {
+               return
+        }
+
+        for (i in 0..<teammatePoints.size) {
+            val target = teammatePoints[i]
+
+            if (linesForDelete.containsKey(target.line.id)) {
+                teammatePoints.removeAt(i)
+            }
+        }
+    }
+
+    private fun doTeacherCleanLines(linesForDelete: Map<String, Line>?) {
+        if (linesForDelete == null) {
+            return
+        }
+
+        for (i in 0..<teacherPoints.size) {
+            val target = teacherPoints[i]
+            if (linesForDelete.containsKey(target.line.id)) {
+                teacherPoints.removeAt(i)
+            }
+        }
+    }
+
+    private fun doPrintState(lines: Map<String, Line>?, isInit: Boolean) {
         if (lines == null) {
             return
         }
@@ -224,6 +257,11 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        // Если нет роли (инициализация приходит с сервера), то считаем, что тетрадь не готова
+        if (currentRole == null) {
+            return false
+        }
+
         val touchX = event.x
         val touchY = event.y
         when (event.action) {
@@ -232,7 +270,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 currentLine = ServiceLine(
                     createLine(UUID.randomUUID(), touchX, touchY, LineOrder.FIRST),
                     Path(),
-                    if (toolType == ToolType.PEN) createPenPaint() else createEraserPaint(),
+                    getPen(),
                     false
                 )
                 currentLine?.path?.moveTo(touchX, touchY)
@@ -244,13 +282,11 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
             MotionEvent.ACTION_MOVE -> { // Draws line between last point and this point
                 println("$touchX : $touchY")
                 currentLine?.path?.lineTo(touchX, touchY)
-//                currentLine?.line?.points?.add(fillDrawPoint(touchX, touchY, LineOrder.MIDDLE))
                 sendToSession(touchX, touchY, LineOrder.MIDDLE)
             }
 
             MotionEvent.ACTION_UP -> {
                 println("Finish print line on $touchX : $touchY")
-//                currentLine?.line?.points?.add(fillDrawPoint(touchX, touchY, LineOrder.LAST))
                 sendToSession(touchX, touchY, LineOrder.LAST)
                 currentLine = null
             }
@@ -259,6 +295,18 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         }
         postInvalidate()
         return true
+    }
+
+    private fun getPen(): Paint {
+        if (toolType == ToolType.ERASER) {
+            return createEraserPaint()
+        }
+
+        if (currentRole == Role.TEACHER) {
+            return createTeacherPenPaint()
+        }
+
+        return createPenPaint()
     }
 
     private fun sendToSession(touchX: Float, touchY: Float, order: LineOrder) {

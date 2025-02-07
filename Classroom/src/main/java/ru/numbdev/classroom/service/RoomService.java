@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.socket.WebSocketSession;
 import ru.numbdev.classroom.dto.Command;
 import ru.numbdev.classroom.dto.LineBlock;
@@ -15,7 +16,7 @@ import ru.numbdev.classroom.dto.Role;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CalculationService {
+public class RoomService {
 
     private final Map<String, Thread> rooms = new ConcurrentHashMap<>();
     private final SessionService sessionService;
@@ -46,6 +47,7 @@ public class CalculationService {
                 info,
                 CommandToRoom.builder()
                         .command(Command.INIT)
+                        .role(info.getRole())
                         .lines(containerService.getCurrent(info.getRoomId()).getDiff())
                         .build()
         );
@@ -71,11 +73,16 @@ public class CalculationService {
 
     public void sendClean(WebSocketSession session) {
         var info = sessionService.getSessionInfo(session);
-        containerService.clean(info);
+        var deletedLines = containerService.clean(info);
+        if (CollectionUtils.isEmpty(deletedLines)) {
+            return;
+        }
+
         sessionService.sendToRoom(
                 info.getRoomId(),
                 CommandToRoom.builder()
                         .command(info.getRole() == Role.TEACHER ? Command.TEACHER_CLEAN : Command.CLEAN)
+                        .lines(deletedLines)
                         .build()
         );
     }
