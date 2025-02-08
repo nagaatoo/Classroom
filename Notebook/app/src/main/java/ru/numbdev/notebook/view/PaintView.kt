@@ -76,7 +76,6 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                     Command.TEACHER_CLEAN -> doTeacherCleanLines(currentCommand.lines)
                     else -> {}
                 }
-                println("Incoming finished")
             }
         }
     }
@@ -139,13 +138,16 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                return
         }
 
+        val lines = mutableListOf<ServiceLine>()
         for (i in 0..<teammatePoints.size) {
             val target = teammatePoints[i]
 
             if (linesForDelete.containsKey(target.line.id)) {
-                teammatePoints.removeAt(i)
+                lines.add(target)
             }
         }
+
+        lines.forEach { teammatePoints.remove(it) }
     }
 
     private fun doTeacherCleanLines(linesForDelete: Map<String, Line>?) {
@@ -153,12 +155,15 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
             return
         }
 
+        val lines = mutableListOf<ServiceLine>()
         for (i in 0..<teacherPoints.size) {
             val target = teacherPoints[i]
             if (linesForDelete.containsKey(target.line.id)) {
-                teacherPoints.removeAt(i)
+                lines.add(target)
             }
         }
+
+        lines.forEach { teacherPoints.remove(it) }
     }
 
     private fun doPrintState(lines: Map<String, Line>?, isInit: Boolean) {
@@ -176,13 +181,12 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
 
                 when (line.role) {
                     Role.TEACHER -> {
-                        val pen = if (line.type == ToolType.PEN) createTeacherPenPaint() else createEraserPaint()
-                        addAndPrint(line, pen, teacherPoints)
+                        println("Print line for teacher")
+                        addAndPrint(line, getPen(line.type, line.role), teacherPoints)
                     }
 
                     Role.STUDENT -> {
-                        val pen = if (line.type == ToolType.PEN) createPenPaint() else createEraserPaint()
-                        addAndPrint(line, pen, teammatePoints)
+                        addAndPrint(line, getPen(line.type, line.role), teammatePoints)
                     }
                 }
             }
@@ -215,7 +219,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 LineOrder.FIRST -> serviceLine.path.moveTo(touchX, touchY)
                 LineOrder.LAST -> {
                     serviceLine.path.lineTo(touchX, touchY)
-//                    serviceLine.isFinished = true
+                    serviceLine.isFinished = true
                 }
                 LineOrder.MIDDLE -> serviceLine.path.lineTo(touchX, touchY)
             }
@@ -244,9 +248,9 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     }
 
     private fun printNotebook(canvas: Canvas) {
-        for (i in 0 .. noteLinesX.size - 1) {
-            canvas.drawPath(noteLinesX.get(i), notePaint)
-            canvas.drawPath(noteLinesY.get(i), notePaint)
+        for (i in 0..<noteLinesX.size) {
+            canvas.drawPath(noteLinesX[i], notePaint)
+            canvas.drawPath(noteLinesY[i], notePaint)
         }
     }
 
@@ -298,11 +302,15 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     }
 
     private fun getPen(): Paint {
-        if (toolType == ToolType.ERASER) {
+       return getPen(toolType, currentRole)
+    }
+
+    private fun getPen(type: ToolType, role: Role?): Paint {
+        if (type == ToolType.ERASER) {
             return createEraserPaint()
         }
 
-        if (currentRole == Role.TEACHER) {
+        if (role == Role.TEACHER) {
             return createTeacherPenPaint()
         }
 
