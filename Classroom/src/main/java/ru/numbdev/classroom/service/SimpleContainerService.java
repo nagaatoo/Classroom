@@ -117,7 +117,7 @@ public class SimpleContainerService implements ContainerService {
                 line.setLastReadedPointId(i);
             }
 
-            if (targetPoints.getLast() != null && targetPoints.getLast().isWasReaded()) {
+            if (line.isFinished()) {
                 line.setWasReaded(true);
             }
 

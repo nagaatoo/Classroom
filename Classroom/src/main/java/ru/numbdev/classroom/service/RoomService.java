@@ -32,7 +32,7 @@ public class RoomService {
                             try {
                                 Thread.sleep(50);
                                 doTick(roomId);
-                                log.info("foo" + Thread.currentThread().getName());
+//                                log.info("foo" + Thread.currentThread().getName());
                             } catch (InterruptedException e) {
                                 return;
                             } catch (Exception e) {
@@ -82,6 +82,7 @@ public class RoomService {
                 info.getRoomId(),
                 CommandToRoom.builder()
                         .command(info.getRole() == Role.TEACHER ? Command.TEACHER_CLEAN : Command.CLEAN)
+                        .role(info.getRole())
                         .lines(deletedLines)
                         .build()
         );
