@@ -14,43 +14,24 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import ru.numbdev.notebook.client.RoomClient
-import ru.numbdev.notebook.dto.Line
 import ru.numbdev.notebook.dto.LineBlock
 import ru.numbdev.notebook.dto.CommandToRoom
-import ru.numbdev.notebook.dto.LineOrder
-import ru.numbdev.notebook.dto.Point
-import ru.numbdev.notebook.dto.Role
-import ru.numbdev.notebook.dto.ServiceLine
-import ru.numbdev.notebook.dto.ToolType
 import ru.numbdev.notebook.dto.command.CleanCommand
 import ru.numbdev.notebook.dto.command.Command
 import ru.numbdev.notebook.dto.command.PrintCommand
-import java.util.UUID
+import ru.numbdev.notebook.room.LineService
 
 
 class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
 
     private val gson = Gson();
 
-    // Tool type
-    private var toolType = ToolType.PEN;
-
     // Solution for clear
     private var isClear = false
-    private val userId = UUID.randomUUID().toString()
-    private var currentRole: Role? = null
 
     private var notePaint: Paint = initNotePaint()
     private val noteLinesX: MutableList<Path> = mutableListOf()
     private val noteLinesY: MutableList<Path> = mutableListOf()
-
-    // Current line witch drawing
-    private var currentLine: ServiceLine? = null
-
-    // Store circles to draw each time the user touches down
-    private val teacherPoints: MutableList<ServiceLine> = mutableListOf()
-    private val teammatePoints: MutableList<ServiceLine> = mutableListOf()
-    private val myPoints: MutableList<ServiceLine> = mutableListOf()
 
     init {
         isFocusable = true;
@@ -62,20 +43,21 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     private fun setup() {
         setBackgroundColor(Color.WHITE)
         GlobalScope.launch {
-            RoomClient.initClient(userId)
+            RoomClient.initClient()
             RoomClient.getSession()?.incoming?.consumeEach {
                 val currentCommand =
                     gson.fromJson(it.data.toString(Charsets.UTF_8), CommandToRoom::class.java)
                 when (currentCommand.command) {
                     Command.INIT -> {
-                        doPrintState(currentCommand.lines, true)
-                        currentRole = currentCommand.role
+                        LineService.doInitState(currentCommand.lines, currentCommand.role)
                     }
-                    Command.CLEAN -> doCleanLines(currentCommand.lines)
-                    Command.PRINT -> doPrintState(currentCommand.lines, false)
-                    Command.TEACHER_CLEAN -> doTeacherCleanLines(currentCommand.lines)
+                    Command.CLEAN -> LineService.doCleanLines(currentCommand.lines)
+                    Command.PRINT -> LineService.doPrintState(currentCommand.lines)
+                    Command.TEACHER_CLEAN -> LineService.doTeacherCleanLines(currentCommand.lines)
                     else -> {}
                 }
+
+                postInvalidate()
             }
         }
     }
@@ -108,13 +90,8 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     }
 
     fun changeTool() {
-        if (toolType == ToolType.PEN) {
-            setupEraserPaint()
-            println("Changed to eraser")
-        } else {
-            setupPenPaint()
-            println("Changed to pen")
-        }
+        LineService.changeTool()
+
     }
 
     fun clean() {
@@ -124,114 +101,9 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
 
     private fun cleanState() {
         println("Clean")
-        myPoints.clear()
+        LineService.cleanMy()
         isClear = true
         invalidate()
-    }
-
-    private fun doCleanLines(linesForDelete: Map<String, Line>?) {
-        if (linesForDelete == null) {
-            return
-        }
-
-        if (linesForDelete.values.firstOrNull()?.userIdOwner == userId) {
-               return
-        }
-
-        val lines = mutableListOf<ServiceLine>()
-        for (i in 0..<teammatePoints.size) {
-            val target = teammatePoints[i]
-
-            if (linesForDelete.containsKey(target.line.id)) {
-                lines.add(target)
-            }
-        }
-
-        lines.forEach { teammatePoints.remove(it) }
-    }
-
-    private fun doTeacherCleanLines(linesForDelete: Map<String, Line>?) {
-        if (linesForDelete == null) {
-            return
-        }
-
-        val lines = mutableListOf<ServiceLine>()
-        for (i in 0..<teacherPoints.size) {
-            val target = teacherPoints[i]
-            if (linesForDelete.containsKey(target.line.id)) {
-                lines.add(target)
-            }
-        }
-
-        lines.forEach { teacherPoints.remove(it) }
-    }
-
-    private fun doPrintState(lines: Map<String, Line>?, isInit: Boolean) {
-        if (lines == null) {
-            return
-        }
-
-        lines
-            .entries
-            .forEach { es ->
-                val line = es.value
-                if (!isInit && userId == line.userIdOwner) {
-                    return;
-                }
-
-                when (line.role) {
-                    Role.TEACHER -> {
-                        println("Print line for teacher")
-                        addAndPrint(line, getPen(line.type, line.role), teacherPoints)
-                    }
-
-                    Role.STUDENT -> {
-                        addAndPrint(line, getPen(line.type, line.role), teammatePoints)
-                    }
-                }
-            }
-
-        postInvalidate()
-    }
-
-    private fun addAndPrint(line: Line, pen: Paint, targetPoints: MutableList<ServiceLine>) {
-        val serviceLine : ServiceLine
-        val lastOrNull = targetPoints.firstOrNull { it.line.id == line.id }
-        if (lastOrNull == null) {
-            serviceLine = ServiceLine(
-                line,
-                Path(),
-                pen,
-                false
-            )
-
-            targetPoints.add(serviceLine)
-        } else {
-            serviceLine = targetPoints.last()
-            serviceLine.line.points.addAll(line.points)
-        }
-
-        line.points.forEachIndexed { _, point ->
-            val touchX = point.x
-            val touchY = point.y
-
-            when (point.order) {
-                LineOrder.FIRST -> serviceLine.path.moveTo(touchX, touchY)
-                LineOrder.LAST -> {
-                    serviceLine.path.lineTo(touchX, touchY)
-                    serviceLine.isFinished = true
-                }
-                LineOrder.MIDDLE -> serviceLine.path.lineTo(touchX, touchY)
-            }
-        }
-    }
-
-    private fun setupPenPaint() {
-        toolType = ToolType.PEN
-    }
-
-    private fun setupEraserPaint() {
-        toolType = ToolType.ERASER
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -241,10 +113,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         }
 
         printNotebook(canvas)
-
-        drawLine(canvas, teammatePoints)
-        drawLine(canvas, myPoints)
-        drawLine(canvas, teacherPoints)
+        LineService.drawLines(canvas)
     }
 
     private fun printNotebook(canvas: Canvas) {
@@ -254,15 +123,9 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         }
     }
 
-    private fun drawLine(canvas: Canvas, line: MutableList<ServiceLine>) {
-        line.forEachIndexed { _, serviceLine ->
-            canvas.drawPath(serviceLine.path, serviceLine.drawPaint)
-        }
-    }
-
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // Если нет роли (инициализация приходит с сервера), то считаем, что тетрадь не готова
-        if (currentRole == null) {
+        if (!LineService.isInit()) {
             return false
         }
 
@@ -271,28 +134,20 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {  // Starts a new line in the path
                 println("Start print new line on $touchX : $touchY")
-                currentLine = ServiceLine(
-                    createLine(UUID.randomUUID(), touchX, touchY, LineOrder.FIRST),
-                    Path(),
-                    getPen(),
-                    false
-                )
-                currentLine?.path?.moveTo(touchX, touchY)
-                myPoints.add(currentLine!!)
-
-                sendToSession(touchX, touchY, LineOrder.FIRST)
+                val lineBlock = LineService.createNewLine(touchX, touchY)
+                sendToSession(lineBlock)
             }
 
             MotionEvent.ACTION_MOVE -> { // Draws line between last point and this point
                 println("$touchX : $touchY")
-                currentLine?.path?.lineTo(touchX, touchY)
-                sendToSession(touchX, touchY, LineOrder.MIDDLE)
+                val lineBlock = LineService.moveLine(touchX, touchY)
+                sendToSession(lineBlock)
             }
 
             MotionEvent.ACTION_UP -> {
                 println("Finish print line on $touchX : $touchY")
-                sendToSession(touchX, touchY, LineOrder.LAST)
-                currentLine = null
+                val lineBlock = LineService.endLine(touchX, touchY)
+                sendToSession(lineBlock)
             }
 
             else -> return false
@@ -301,36 +156,11 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         return true
     }
 
-    private fun getPen(): Paint {
-       return getPen(toolType, currentRole)
-    }
-
-    private fun getPen(type: ToolType, role: Role?): Paint {
-        if (type == ToolType.ERASER) {
-            return createEraserPaint()
-        }
-
-        if (role == Role.TEACHER) {
-            return createTeacherPenPaint()
-        }
-
-        return createPenPaint()
-    }
-
-    private fun sendToSession(touchX: Float, touchY: Float, order: LineOrder) {
+    private fun sendToSession(lineBlock: LineBlock) {
         runBlocking {
             RoomClient.send(
                 PrintCommand(
-                    block = LineBlock(
-                        currentLine?.line!!.id,
-                        currentLine?.line!!.type,
-                        Point(
-                            x = touchX,
-                            y = touchY,
-                            timestamp = System.currentTimeMillis(),
-                            order
-                        )
-                    )
+                    block = lineBlock
                 )
             )
         }
@@ -344,69 +174,6 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 )
             )
         }
-    }
-
-    private fun createLine(
-        currentLineId: UUID,
-        touchX: Float,
-        touchY: Float,
-        order: LineOrder
-    ): Line {
-        return Line(
-            currentLineId.toString(),
-            userId,
-            Role.STUDENT,
-            toolType,
-            mutableListOf(fillDrawPoint(touchX, touchY, order))
-        )
-    }
-
-    private fun fillDrawPoint(touchX: Float, touchY: Float, order: LineOrder): Point {
-        return Point(
-            touchX,
-            touchY,
-            System.currentTimeMillis(),
-            order
-        )
-    }
-
-    private fun createPenPaint(): Paint {
-        val drawPaint = Paint()
-        drawPaint.style = Paint.Style.FILL;
-        drawPaint.setColor(Color.BLACK);
-        drawPaint.isAntiAlias = true;
-        drawPaint.strokeWidth = 5F;
-        drawPaint.style = Paint.Style.STROKE;
-        drawPaint.strokeJoin = Paint.Join.ROUND;
-        drawPaint.strokeCap = Paint.Cap.ROUND;
-
-        return drawPaint
-    }
-
-    private fun createTeacherPenPaint(): Paint {
-        val drawPaint = Paint()
-        drawPaint.style = Paint.Style.FILL;
-        drawPaint.setColor(Color.RED);
-        drawPaint.isAntiAlias = true;
-        drawPaint.strokeWidth = 5F;
-        drawPaint.style = Paint.Style.STROKE;
-        drawPaint.strokeJoin = Paint.Join.ROUND;
-        drawPaint.strokeCap = Paint.Cap.ROUND;
-
-        return drawPaint
-    }
-
-    private fun createEraserPaint(): Paint {
-        val drawPaint = Paint()
-        drawPaint.style = Paint.Style.FILL;
-        drawPaint.setColor(Color.WHITE);
-        drawPaint.isAntiAlias = true;
-        drawPaint.strokeWidth = 5F;
-        drawPaint.style = Paint.Style.STROKE;
-        drawPaint.strokeJoin = Paint.Join.ROUND;
-        drawPaint.strokeCap = Paint.Cap.ROUND;
-
-        return drawPaint
     }
 
 }
