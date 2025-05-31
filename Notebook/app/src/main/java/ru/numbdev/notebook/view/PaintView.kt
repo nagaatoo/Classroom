@@ -20,6 +20,7 @@ import ru.numbdev.notebook.dto.command.CleanCommand
 import ru.numbdev.notebook.dto.command.Command
 import ru.numbdev.notebook.dto.command.PrintCommand
 import ru.numbdev.notebook.room.LineService
+import java.util.UUID
 
 
 class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
@@ -28,6 +29,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
 
     // Solution for clear
     private var isClear = false
+    private var roomId: UUID? = null
 
     private var notePaint: Paint = initNotePaint()
     private val noteLinesX: MutableList<Path> = mutableListOf()
@@ -49,6 +51,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                     gson.fromJson(it.data.toString(Charsets.UTF_8), CommandToRoom::class.java)
                 when (currentCommand.command) {
                     Command.INIT -> {
+                        roomId = currentCommand.roomId
                         LineService.doInitState(currentCommand.lines, currentCommand.role)
                     }
                     Command.CLEAN -> LineService.doCleanLines(currentCommand.lines)

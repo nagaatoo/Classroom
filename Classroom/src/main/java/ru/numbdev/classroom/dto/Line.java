@@ -2,6 +2,8 @@ package ru.numbdev.classroom.dto;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -19,10 +21,14 @@ public class Line {
     private List<Point> points;
     private Long created;
 
-    private transient boolean isFinished;
-    private transient boolean isDeleted;
-    private transient boolean wasReaded;
-    private transient int lastReadedPointId = 0;
+    @Builder.Default
+    private transient AtomicBoolean isFinished = new AtomicBoolean();
+    @Builder.Default
+    private transient AtomicBoolean isDeleted = new AtomicBoolean();
+    @Builder.Default
+    private transient AtomicBoolean wasReaded = new AtomicBoolean();
+    @Builder.Default
+    private transient AtomicInteger lastReadedPointId = new AtomicInteger(0);
 
     public Line cloneLine(List<Point> newPoints) {
         return Line.builder()

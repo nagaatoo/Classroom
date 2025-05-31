@@ -22,7 +22,6 @@ class RoomClient {
 
     companion object {
 
-        private val roomId = UUID.fromString("7345b757-fadb-4c98-91fb-cbf5f51d7ad9");
         private var session: DefaultClientWebSocketSession? = null
 
         suspend fun initClient() {
@@ -37,11 +36,12 @@ class RoomClient {
             try {
                 session = client.webSocketSession(
                     method = HttpMethod.Get,
-                    host = "192.168.64.1",
+                    host = "192.168.245.117",
+//                    host = "158.160.155.146",
                     port = 8081,
                     path = "/chat",
                     {
-                        header("room_id", roomId.toString())
+                        header("room_id", RoomStateParams.selectedRoomId.toString())
                         header("user_id", RoomStateParams.userId)
                     }
                 )

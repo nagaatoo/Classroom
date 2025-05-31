@@ -1,104 +1,80 @@
 package ru.numbdev.classroom.service;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-import org.springframework.web.socket.WebSocketSession;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import ru.numbdev.classroom.dto.Command;
-import ru.numbdev.classroom.dto.CommandToRoom;
+import ru.numbdev.classroom.context.RoomContext;
 import ru.numbdev.classroom.dto.LineBlock;
-import ru.numbdev.classroom.dto.Role;
+import ru.numbdev.classroom.dto.RoomWebSocketSession;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoomService {
 
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(
-        Runtime.getRuntime().availableProcessors(),
-        Thread.ofVirtual().factory()
-    );
-    private final Map<String, ScheduledFuture<?>> roomTasks = new ConcurrentHashMap<>();
-    
-    
-    // private final Map<String, Thread> rooms = new ConcurrentHashMap<>();
-    private final SessionService sessionService;
-    private final ContainerService containerService;
+    private final Map<UUID, RoomContext> roomTasks = new ConcurrentHashMap<>();
+    private final Map<String, UUID> sessionsInRooms = new HashMap<>();
+    private final UserService userService;
+    private final ApplicationContext applicationContext;
+    private final ScheduledTaskService scheduledTaskService;
 
-    public void registerRoomIfAbsent(WebSocketSession session) {
-        sessionService.addSession(session);
-        var info = sessionService.getSessionInfo(session);
-        roomTasks.computeIfAbsent(info.getRoomId(), roomId -> {
-            return scheduler.scheduleAtFixedRate(
-                () -> doTick(roomId),
-                0, 50, TimeUnit.MILLISECONDS
-            );
-        });
-        sessionService.sendInitState(
-                info,
-                CommandToRoom.builder()
-                        .command(Command.INIT)
-                        .role(info.getRole())
-                        .lines(containerService.getCurrent(info.getRoomId()).getDiff())
-                        .build()
-        );
-    }
-
-    public void removeFromRoom(WebSocketSession session) {
-        var info = sessionService.getSessionInfo(session);
-        sessionService.removeSession(session);
-        if (sessionService.roomIsEmpty(info.getRoomId())) {
-            roomTasks.computeIfPresent(info.getRoomId(), (roomId, job) -> {
-                job.cancel(true);
-                return null;
-            });
-
-            // rooms.remove(info.getRoomId());
+    @PostConstruct
+    private void initForTest() {
+        for (var id : List.of(
+                UUID.fromString("9ffeec9b-1035-4b6f-b6e7-6a51ce97d943"),
+                UUID.fromString("015949bb-3694-4841-bdb6-101d565fa586"))) {
+            var context = applicationContext.getBean(RoomContext.class).setRoomId(id);
+            roomTasks.put(context.getRoomId(), context);
         }
     }
 
-    public void addDiff(WebSocketSession session, LineBlock block) {
-        var info = sessionService.getSessionInfo(session);
-        containerService.addLine(info, block);
-    }
-
-    public void sendClean(WebSocketSession session) {
-        var info = sessionService.getSessionInfo(session);
-        var deletedLines = containerService.clean(info);
-        if (CollectionUtils.isEmpty(deletedLines)) {
-            return;
+    public void registerRoomIfAbsent(RoomWebSocketSession session) {
+        RoomContext context;
+        if (session.getRoomId() == null) {
+            context = applicationContext.getBean(RoomContext.class);
+            roomTasks.put(context.getRoomId(), context);
+            session.initRoomId(context.getRoomId());
+        } else {
+            context = roomTasks.get(session.getRoomId());
         }
 
-        sessionService.sendToRoom(
-                info.getRoomId(),
-                CommandToRoom.builder()
-                        .command(info.getRole() == Role.TEACHER ? Command.TEACHER_CLEAN : Command.CLEAN)
-                        .role(info.getRole())
-                        .lines(deletedLines)
-                        .build()
-        );
+        var userRole = userService.getRoleUser(session.getUserId());
+        session.setRole(userRole);
+        sessionsInRooms.put(session.getSessionId(), session.getRoomId());
+        context.addSession(session);
+        scheduledTaskService.addToSchedule(context);
     }
 
-    private void doTick(String roomId) {
-        log.info("run for room {}", roomId);
-        var diffs = containerService.sortAndCommit(roomId);
-        if (diffs.getDiff() != null) {
-            sessionService.sendToRoom(
-                    roomId,
-                    CommandToRoom.builder()
-                            .command(Command.PRINT)
-                            .lines(diffs.getDiff())
-                            .build()
-            );
+    public void removeFromRoom(String sessionId) {
+        var roomId = sessionsInRooms.remove(sessionId);
+        var room = roomTasks.get(roomId);
+        room.removeFromRoom(sessionId);
+
+        if (room.isEmpty()) {
+            roomTasks.remove(roomId);
+            scheduledTaskService.removeFromSchedule(room);
         }
+
+        userService.remove(); // Удалить после введения авторизации
     }
+
+    public void addDiff(String sessionId, LineBlock block) {
+        var roomId = sessionsInRooms.get(sessionId);
+        roomTasks.get(roomId).addDiff(sessionId, block);
+    }
+
+    public void sendClean(String sessionId) {
+        var roomId = sessionsInRooms.get(sessionId);
+        roomTasks.get(roomId).sendClean(sessionId);
+    }
+
 }

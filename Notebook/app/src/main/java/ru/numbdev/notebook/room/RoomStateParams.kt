@@ -4,6 +4,9 @@ import java.util.UUID
 
 class RoomStateParams {
     companion object {
-        val userId = UUID.randomUUID().toString()
+        var userId = UUID.randomUUID().toString()
+        var username: String = ""
+        var isTeacher: Boolean = false
+        var selectedRoomId: UUID? = null
     }
 }
