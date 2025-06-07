@@ -11,6 +11,7 @@ import lombok.Getter;
 public class CommandToRoom {
     private Command command;
     private UUID roomId;
+    private int pageNumber;
     private Role role;
     private Map<String, Line> lines;
 }

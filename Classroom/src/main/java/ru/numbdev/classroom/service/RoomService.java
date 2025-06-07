@@ -77,4 +77,9 @@ public class RoomService {
         roomTasks.get(roomId).sendClean(sessionId);
     }
 
+    public void goToPage(String sessionId, int pageNumber) {
+        var roomId = sessionsInRooms.get(sessionId);
+        roomTasks.get(roomId).goToPage(sessionId, pageNumber);
+    }
+
 }

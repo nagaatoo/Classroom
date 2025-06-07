@@ -8,5 +8,6 @@ class RoomStateParams {
         var username: String = ""
         var isTeacher: Boolean = false
         var selectedRoomId: UUID? = null
+        var currentPage: Int = 0
     }
 }

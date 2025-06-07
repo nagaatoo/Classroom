@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ru.numbdev.notebook.view.NonScrollableScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:focusableInTouchMode="false"
+    android:fillViewport="true">
+
+    <ru.numbdev.notebook.view.NonScrollableScrollView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:focusableInTouchMode="false"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ru.numbdev.notebook.view.PaintView
+                android:id="@+id/paintView"
+                android:layout_width="5000dp"
+                android:layout_height="5000dp"
+                tools:context=".MainActivity" />
+                
+        </LinearLayout>
+
+    </ru.numbdev.notebook.view.NonScrollableScrollView>
+    
+</ru.numbdev.notebook.view.NonScrollableScrollView> 

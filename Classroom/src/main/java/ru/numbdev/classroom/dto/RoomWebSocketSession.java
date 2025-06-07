@@ -8,6 +8,7 @@ import org.springframework.web.socket.WebSocketSession;
 import com.google.gson.Gson;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -18,8 +19,13 @@ public class RoomWebSocketSession {
     private static final String USER_ID_HEADER = "user_id";
 
     private Gson gson;
+    @Getter
     private UUID roomId;
+    @Setter
     private Role role;
+    @Getter
+    @Setter
+    private int currentPage;
     private WebSocketSession session;
 
     private RoomWebSocketSession(WebSocketSession session, Gson gson) {
@@ -43,10 +49,6 @@ public class RoomWebSocketSession {
         return session.getHandshakeHeaders().get(USER_ID_HEADER).getFirst();
     }
 
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
     public void initRoomId(UUID roomId) {
         this.roomId = roomId;
     }
@@ -61,7 +63,7 @@ public class RoomWebSocketSession {
                     .roomId(roomId)
                     .command(command)
                     .role(role)
-                    .lines(diffToRoom.getDiff())
+                    .lines(diffToRoom.getDiff().get(currentPage))
                     .build();
             session.sendMessage(new TextMessage(gson.toJson(message)));
         } catch (Exception e) {

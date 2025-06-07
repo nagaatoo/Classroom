@@ -54,6 +54,10 @@ public class RoomHandler implements WebSocketHandler {
                 roomService.sendClean(session.getId());
                 log.info("Do clean for: " + session.getId());
             }
+            case TO_PAGE -> {
+                roomService.goToPage(session.getId(), command.getPageNumber());
+                log.info("{} go to page {}: ", session.getId(), command.getPageNumber());
+            }
         }
     }
 

@@ -5,5 +5,6 @@ enum class Command {
     INIT,
     CLEAN,
     PRINT,
+    TO_PAGE,
     TEACHER_CLEAN
 }

@@ -20,6 +20,7 @@ import ru.numbdev.notebook.dto.command.CleanCommand
 import ru.numbdev.notebook.dto.command.Command
 import ru.numbdev.notebook.dto.command.PrintCommand
 import ru.numbdev.notebook.room.LineService
+import ru.numbdev.notebook.room.RoomStateParams
 import java.util.UUID
 
 
@@ -52,6 +53,9 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 when (currentCommand.command) {
                     Command.INIT -> {
                         roomId = currentCommand.roomId
+                        LineService.doInitState(currentCommand.lines, currentCommand.role)
+                    }
+                    Command.TO_PAGE -> {
                         LineService.doInitState(currentCommand.lines, currentCommand.role)
                     }
                     Command.CLEAN -> LineService.doCleanLines(currentCommand.lines)
@@ -107,6 +111,43 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         LineService.cleanMy()
         isClear = true
         invalidate()
+    }
+
+    /**
+     * Полная реинициализация PaintView при смене страницы
+     */
+    fun reinitialize() {
+        println("Reinitializing PaintView")
+        
+        // Очищаем все состояние
+        isClear = true
+        
+        // Очищаем линии сетки
+        noteLinesX.clear()
+        noteLinesY.clear()
+        
+        // Сбрасываем состояние LineService
+        LineService.reinitialize()
+        
+        // Пересоздаем Paint
+        notePaint = initNotePaint()
+
+        // Устанавливаем белый фон
+        setBackgroundColor(Color.WHITE)
+        
+        // Пересоздаем сетку если размеры уже известны
+        if (width > 0 && height > 0) {
+            setupNote()
+        }
+
+        isFocusable = true;
+        setFocusableInTouchMode(true);
+        setup()
+        
+        // Принудительная перерисовка
+        invalidate()
+        
+        println("PaintView reinitialized")
     }
 
     override fun onDraw(canvas: Canvas) {

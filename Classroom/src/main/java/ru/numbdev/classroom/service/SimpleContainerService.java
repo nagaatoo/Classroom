@@ -24,11 +24,13 @@ import ru.numbdev.classroom.dto.RoomWebSocketSession;
 @RequiredArgsConstructor
 public class SimpleContainerService implements ContainerService {
 
-    private final Map<String, Line> cache = new ConcurrentHashMap<>();
+    private final Map<Integer, Map<String, Line>> cache = new ConcurrentHashMap<>();
 
     @Override
     public void addLine(RoomWebSocketSession session, LineBlock block) {
-        cache
+        var pageCache = cache.computeIfAbsent(block.getPageNumber(), k -> new ConcurrentHashMap<>());
+
+        pageCache
                 .computeIfPresent(
                         block.getId(),
                         (k, v) -> {
@@ -39,7 +41,7 @@ public class SimpleContainerService implements ContainerService {
                             }
                             return v;
                         });
-        cache
+        pageCache
                 .computeIfAbsent(
                         block.getId(),
                         k -> {
@@ -58,61 +60,77 @@ public class SimpleContainerService implements ContainerService {
     }
 
     @Override
-    public Map<String, Line> clean(String sessionId) {
-        Map<String, Line> deletedLines = new HashMap<>();
-        for (Map.Entry<String, Line> es : cache.entrySet()) {
-            var line = es.getValue();
-            if (line.getSessionIdOwner().equals(sessionId)) {
-                deletedLines.put(line.getId().toString(), line);
-                line.getIsDeleted().set(true);;
-            }
-        }
-
-        return deletedLines;
-    }
-
-    @Override
-    public DiffToRoom getCurrent() {
-        return DiffToRoom.builder().diff(Map.copyOf(cache)).build();
-    }
-
-    @Override
-    public synchronized DiffToRoom diffAndCommit() {
-        if (cache.isEmpty()) {
+    public DiffToRoom clean(String sessionId, int pageNumber) {
+        var pageCache = cache.get(pageNumber);
+        if (pageCache == null) {
             return DiffToRoom.builder().build();
         }
 
-        Map<String, Line> result = new HashMap<>();
-        for (Map.Entry<String, Line> keyWithLine : cache.entrySet()) {
-            var idLine = keyWithLine.getKey();
-            var line = keyWithLine.getValue();
-            if (line.getIsDeleted().get()) {
-                continue;
+        Map<String, Line> deletedLines = new HashMap<>();
+        for (Map.Entry<String, Line> es : pageCache.entrySet()) {
+            var line = es.getValue();
+            if (line.getSessionIdOwner().equals(sessionId)) {
+                deletedLines.put(line.getId().toString(), line);
+                line.getIsDeleted().set(true);
             }
-
-            List<Point> targetPoints = line.getPoints();
-            if (line.getWasReaded().get()) {
-                continue;
-            }
-
-            List<Point> sortedPoints = new ArrayList<>();
-            for (int i = line.getLastReadedPointId().get(); i <= targetPoints.size() - 1; i++) {
-                var point = targetPoints.get(i);
-                sortedPoints.add(point);
-                point.setWasReaded(true);
-                line.getLastReadedPointId().incrementAndGet();
-            }
-
-            if (line.getIsFinished().get()) {
-                line.getWasReaded().set(true);
-            }
-
-            result.put(idLine, line.cloneLine(sortedPoints));
         }
 
-        return DiffToRoom.builder()
-                .diff(result)
+        return DiffToRoom
+                .builder()
+                .diff(Map.of(pageNumber, deletedLines))
                 .build();
+    }
+
+    @Override
+    public DiffToRoom getCurrent(int pageNumber) {
+        return DiffToRoom
+                .builder()
+                .diff(Map.of(pageNumber, Map.copyOf(cache.getOrDefault(pageNumber, new HashMap<>()))))
+                .build();
+    }
+
+    @Override
+    public synchronized Map<Integer, Map<String, Line>> diffAndCommit() {
+        if (cache.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Integer, Map<String, Line>> result = new HashMap<>();
+        for (var esPage : cache.entrySet()) {
+            var pageNumber = esPage.getKey();
+            var page = esPage.getValue();
+            Map<String, Line> pageResult = new HashMap<>();
+            for (Map.Entry<String, Line> keyWithLine : page.entrySet()) {
+                var idLine = keyWithLine.getKey();
+                var line = keyWithLine.getValue();
+                if (line.getIsDeleted().get()) {
+                    continue;
+                }
+
+                List<Point> targetPoints = line.getPoints();
+                if (line.getWasReaded().get()) {
+                    continue;
+                }
+
+                List<Point> sortedPoints = new ArrayList<>();
+                for (int i = line.getLastReadedPointId().get(); i <= targetPoints.size() - 1; i++) {
+                    var point = targetPoints.get(i);
+                    sortedPoints.add(point);
+                    point.setWasReaded(true);
+                    line.getLastReadedPointId().incrementAndGet();
+                }
+
+                if (line.getIsFinished().get()) {
+                    line.getWasReaded().set(true);
+                }
+
+                pageResult.put(idLine, line.cloneLine(sortedPoints));
+            }
+
+            result.put(pageNumber, pageResult);
+        }
+
+        return result;
     }
 
 }

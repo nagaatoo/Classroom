@@ -9,7 +9,7 @@ import ru.numbdev.classroom.dto.RoomWebSocketSession;
 
 public interface ContainerService {
     void addLine(RoomWebSocketSession session, LineBlock block);
-    Map<String, Line> clean(String sessionId);
-    DiffToRoom getCurrent();
-    DiffToRoom diffAndCommit();
+    DiffToRoom clean(String sessionId, int pageNumber);
+    DiffToRoom getCurrent(int pageNumber);
+    Map<Integer, Map<String, Line>> diffAndCommit();
 }

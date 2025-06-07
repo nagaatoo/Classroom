@@ -13,6 +13,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import ru.numbdev.notebook.dto.command.BaseCommand
 import ru.numbdev.notebook.dto.command.PingCommand
+import ru.numbdev.notebook.dto.command.PrintCommand
+import ru.numbdev.notebook.dto.command.ToPageCommand
 import ru.numbdev.notebook.room.RoomStateParams
 import java.util.Timer
 import java.util.TimerTask
@@ -36,7 +38,7 @@ class RoomClient {
             try {
                 session = client.webSocketSession(
                     method = HttpMethod.Get,
-                    host = "192.168.245.117",
+                    host = "192.168.50.166",
 //                    host = "158.160.155.146",
                     port = 8081,
                     path = "/chat",
@@ -68,6 +70,20 @@ class RoomClient {
             }
 
             val json = Gson().toJson(line)
+            println(json)
+            session?.outgoing?.send(Frame.Text(json))
+        }
+
+        suspend fun changePage(pageNumber: Number) {
+            if (session == null || session?.isActive == false) {
+                initClient()
+            }
+
+            val json = Gson().toJson(
+                ToPageCommand(
+                    pageNumber
+                )
+            )
             println(json)
             session?.outgoing?.send(Frame.Text(json))
         }

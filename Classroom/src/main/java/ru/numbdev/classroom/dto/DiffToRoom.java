@@ -8,5 +8,5 @@ import lombok.Getter;
 @Getter
 @Builder
 public class DiffToRoom {
-    private Map<String, Line> diff;
+    private Map<Integer, Map<String, Line>> diff;
 }

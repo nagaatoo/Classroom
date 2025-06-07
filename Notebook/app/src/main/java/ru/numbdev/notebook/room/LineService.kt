@@ -31,6 +31,23 @@ class LineService {
             return currentRole != null
         }
 
+        /**
+         * Полная реинициализация LineService при смене страницы
+         */
+        fun reinitialize() {
+            println("Reinitializing LineService")
+            
+            // Очищаем текущую линию
+            currentLine = null
+            
+            // Очищаем все точки
+            teacherPoints.clear()
+            teammatePoints.clear()
+            myPoints.clear()
+            
+            println("LineService reinitialized")
+        }
+
         fun changeTool() {
             if (currentTool == ToolType.PEN) {
                 currentTool = ToolType.ERASER
@@ -203,6 +220,7 @@ class LineService {
         private fun createBlock(touchX: Float, touchY: Float, order: LineOrder): LineBlock {
             return LineBlock(
                 currentLine?.line!!.id,
+                RoomStateParams.currentPage,
                 currentLine?.line!!.type,
                 Point(
                     x = touchX,

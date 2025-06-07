@@ -7,5 +7,6 @@ import lombok.Getter;
 @Builder
 public class CommandFromRoom {
     private Command command;
+    private int pageNumber;
     private LineBlock block;
 }

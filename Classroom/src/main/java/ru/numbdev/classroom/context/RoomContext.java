@@ -1,5 +1,6 @@
 package ru.numbdev.classroom.context;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,7 +34,7 @@ public class RoomContext implements ScheduledContext {
 
     public void addSession(RoomWebSocketSession session) {
         sessions.put(session.getSessionId(), session);
-        session.sendMessage(Command.INIT, containerService.getCurrent());
+        session.sendMessage(Command.INIT, containerService.getCurrent(session.getCurrentPage()));
     }
 
     public void removeFromRoom(String sessionId) {
@@ -46,12 +47,18 @@ public class RoomContext implements ScheduledContext {
 
     public void sendClean(String sessionId) {
         var sessioin = sessions.get(sessionId);
-        var deletedLines = containerService.clean(sessionId);
+        var deletedLines = containerService.clean(sessionId, sessioin.getCurrentPage());
         var command = sessioin.getRole() == Role.TEACHER ? Command.TEACHER_CLEAN : Command.CLEAN;
 
         sessions.values().forEach(session -> {
-            session.sendMessage(command, DiffToRoom.builder().diff(deletedLines).build());
+            session.sendMessage(command, deletedLines);
         });
+    }
+
+    public void goToPage(String sessionId, int pageNumber) {
+        var session = sessions.get(sessionId);
+        session.setCurrentPage(pageNumber);
+        session.sendMessage(Command.TO_PAGE, containerService.getCurrent(session.getCurrentPage()));
     }
 
     public boolean isEmpty() {
@@ -65,9 +72,16 @@ public class RoomContext implements ScheduledContext {
         }
 
         var diffs = containerService.diffAndCommit();
-        if (!CollectionUtils.isEmpty(diffs.getDiff())) {
+        if (!CollectionUtils.isEmpty(diffs)) {
             sessions.values().forEach(session -> {
-                session.sendMessage(Command.PRINT, diffs);
+                session.sendMessage(
+                        Command.PRINT,
+                        DiffToRoom.builder()
+                                .diff(
+                                        Map.of(
+                                                session.getCurrentPage(),
+                                                diffs.getOrDefault(session.getCurrentPage(), new HashMap<>())))
+                                .build());
             });
         }
     }
