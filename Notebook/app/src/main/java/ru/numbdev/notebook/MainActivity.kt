@@ -1,7 +1,6 @@
 package ru.numbdev.notebook
 
 import android.os.Bundle
-import android.view.MotionEvent
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -14,16 +13,12 @@ import ru.numbdev.notebook.adapter.PaintPagesAdapter
 import ru.numbdev.notebook.client.RoomClient
 import ru.numbdev.notebook.fragment.PaintPageFragment
 import ru.numbdev.notebook.room.RoomStateParams
-import ru.numbdev.notebook.view.SingleFingerSwipeDetector
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var viewPager: ViewPager2
     private lateinit var pageIndicator: TextView
     private lateinit var adapter: PaintPagesAdapter
-    private lateinit var swipeDetector: SingleFingerSwipeDetector
-    private var screenWidth = 0
-    private var screenHeight = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,10 +30,6 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        // Получаем размеры экрана
-        screenWidth = resources.displayMetrics.widthPixels
-        screenHeight = resources.displayMetrics.heightPixels
-
         // Инициализация views
         initViews()
 
@@ -47,9 +38,6 @@ class MainActivity : AppCompatActivity() {
 
         // Настройка ViewPager2
         setupViewPager()
-
-        // Настройка детектора свайпов
-        setupSwipeDetector()
 
         // Настройка кнопок
         setupButtons()
@@ -71,35 +59,38 @@ class MainActivity : AppCompatActivity() {
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                runBlocking {
-                    RoomClient.changePage(position)
-                }
-                
+
                 // Реинициализируем PaintView для новой страницы
                 getCurrentFragment()?.reinitialize()
                 
                 updatePageIndicator(position)
                 RoomStateParams.currentPage = position
+                runBlocking {
+                    RoomClient.changePage(position)
+                }
             }
         })
 
         updatePageIndicator(0)
     }
 
-    private fun setupSwipeDetector() {
-        swipeDetector = SingleFingerSwipeDetector(
-            onSwipeLeft = { goToNextPage() },
-            onSwipeRight = { goToPreviousPage() }
-        )
-    }
-
     private fun setupButtons() {
+        // Кнопки управления инструментами
         findViewById<Button>(R.id.tool).setOnClickListener {
             getCurrentFragment()?.changeTool()
         }
 
         findViewById<Button>(R.id.cleanAll).setOnClickListener {
             getCurrentFragment()?.clean()
+        }
+
+        // Кнопки навигации между страницами
+        findViewById<Button>(R.id.previousPageButton).setOnClickListener {
+            goToPreviousPage()
+        }
+
+        findViewById<Button>(R.id.nextPageButton).setOnClickListener {
+            goToNextPage()
         }
     }
 
@@ -139,15 +130,5 @@ class MainActivity : AppCompatActivity() {
         if (currentPosition > 0) {
             viewPager.setCurrentItem(currentPosition - 1, true)
         }
-    }
-
-    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        // Сначала пробуем обработать однопальцевый свайп в нижнем правом углу
-        if (swipeDetector.onTouchEvent(ev, screenWidth, screenHeight)) {
-            return true
-        }
-        
-        // Если не обработано, передаем дальше
-        return super.dispatchTouchEvent(ev)
     }
 }

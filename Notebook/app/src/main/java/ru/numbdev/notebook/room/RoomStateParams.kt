@@ -1,5 +1,6 @@
 package ru.numbdev.notebook.room
 
+import ru.numbdev.notebook.dto.Role
 import java.util.UUID
 
 class RoomStateParams {
@@ -9,5 +10,6 @@ class RoomStateParams {
         var isTeacher: Boolean = false
         var selectedRoomId: UUID? = null
         var currentPage: Int = 0
+        var role: Role? = null
     }
 }

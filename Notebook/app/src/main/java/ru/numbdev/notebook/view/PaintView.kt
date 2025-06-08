@@ -40,6 +40,9 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         isFocusable = true;
         setFocusableInTouchMode(true);
         setup()
+        runBlocking {
+            RoomClient.changePage(RoomStateParams.currentPage)
+        }
         viewTreeObserver.addOnGlobalLayoutListener { setupNote() }
     }
 
@@ -53,10 +56,11 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 when (currentCommand.command) {
                     Command.INIT -> {
                         roomId = currentCommand.roomId
-                        LineService.doInitState(currentCommand.lines, currentCommand.role)
+                        RoomStateParams.role = currentCommand.role
+                        LineService.doInitState(currentCommand.lines)
                     }
                     Command.TO_PAGE -> {
-                        LineService.doInitState(currentCommand.lines, currentCommand.role)
+                        LineService.doInitState(currentCommand.lines)
                     }
                     Command.CLEAN -> LineService.doCleanLines(currentCommand.lines)
                     Command.PRINT -> LineService.doPrintState(currentCommand.lines)

@@ -56,7 +56,16 @@ public class RoomService {
 
     public void removeFromRoom(String sessionId) {
         var roomId = sessionsInRooms.remove(sessionId);
+
+        if (roomId == null) {
+            return;
+        }
+
         var room = roomTasks.get(roomId);
+        if (room == null) {
+            return;
+        }
+
         room.removeFromRoom(sessionId);
 
         if (room.isEmpty()) {

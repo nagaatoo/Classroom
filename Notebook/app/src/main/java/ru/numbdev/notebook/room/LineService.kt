@@ -16,7 +16,6 @@ import java.util.UUID
 class LineService {
     companion object {
 
-        private var currentRole: Role? = null
         private var currentTool: ToolType = ToolType.PEN
 
         // Current line witch drawing
@@ -28,7 +27,7 @@ class LineService {
         private val myPoints: MutableList<ServiceLine> = mutableListOf()
 
         fun isInit(): Boolean {
-            return currentRole != null
+            return RoomStateParams.role != null
         }
 
         /**
@@ -36,15 +35,15 @@ class LineService {
          */
         fun reinitialize() {
             println("Reinitializing LineService")
-            
+
             // Очищаем текущую линию
             currentLine = null
-            
+
             // Очищаем все точки
             teacherPoints.clear()
             teammatePoints.clear()
             myPoints.clear()
-            
+
             println("LineService reinitialized")
         }
 
@@ -93,7 +92,7 @@ class LineService {
             lines.forEach { teammatePoints.remove(it) }
         }
 
-         fun doTeacherCleanLines(linesForDelete: Map<String, Line>?) {
+        fun doTeacherCleanLines(linesForDelete: Map<String, Line>?) {
             if (linesForDelete == null) {
                 return
             }
@@ -109,8 +108,7 @@ class LineService {
             lines.forEach { teacherPoints.remove(it) }
         }
 
-        fun doInitState(lines: Map<String, Line>?, role: Role) {
-            currentRole = role
+        fun doInitState(lines: Map<String, Line>?) {
             printState(lines, true)
         }
 
@@ -128,6 +126,7 @@ class LineService {
                 .forEach { es ->
                     val line = es.value
                     if (!isInit && RoomStateParams.userId == line.userIdOwner) {
+                        println("Skip $isInit and user ${RoomStateParams.userId}")
                         return;
                     }
 
@@ -145,7 +144,7 @@ class LineService {
         }
 
         private fun addAndPrint(line: Line, pen: Paint, targetPoints: MutableList<ServiceLine>) {
-            val serviceLine : ServiceLine
+            val serviceLine: ServiceLine
             val lastOrNull = targetPoints.firstOrNull { it.line.id == line.id }
             if (lastOrNull == null) {
                 serviceLine = ServiceLine(
@@ -171,6 +170,7 @@ class LineService {
                         serviceLine.path.lineTo(touchX, touchY)
                         serviceLine.isFinished = true
                     }
+
                     LineOrder.MIDDLE -> serviceLine.path.lineTo(touchX, touchY)
                 }
             }
@@ -232,7 +232,7 @@ class LineService {
         }
 
         private fun getPen(): Paint {
-            return getPen(currentTool, currentRole)
+            return getPen(currentTool, RoomStateParams.role)
         }
 
         private fun getPen(type: ToolType, role: Role?): Paint {
