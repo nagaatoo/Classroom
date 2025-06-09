@@ -19,22 +19,20 @@ public class RoomWebSocketSession {
     private static final String USER_ID_HEADER = "user_id";
 
     private Gson gson;
-    @Getter
     private UUID roomId;
-    @Setter
-    private Role role;
-    @Getter
+    private UserInfo userInfo;
     @Setter
     private int currentPage;
     private WebSocketSession session;
 
-    private RoomWebSocketSession(WebSocketSession session, Gson gson) {
+    private RoomWebSocketSession(WebSocketSession session, UserInfo userInfo, Gson gson) {
         this.session = session;
+        this.userInfo = userInfo;
         this.gson = gson;
     }
 
-    public static RoomWebSocketSession getInstanse(WebSocketSession targetSession, Gson gson) {
-        return new RoomWebSocketSession(targetSession, gson);
+    public static RoomWebSocketSession getInstanse(WebSocketSession targetSession, UserInfo userInfo, Gson gson) {
+        return new RoomWebSocketSession(targetSession, userInfo, gson);
     }
 
     public UUID getRoomId() {
@@ -62,7 +60,7 @@ public class RoomWebSocketSession {
             var message = CommandToRoom.builder()
                     .roomId(roomId)
                     .command(command)
-                    .role(role)
+                    .role(userInfo.getRole())
                     .lines(diffToRoom.getDiff().get(currentPage))
                     .build();
             session.sendMessage(new TextMessage(gson.toJson(message)));

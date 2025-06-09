@@ -48,7 +48,7 @@ public class RoomContext implements ScheduledContext {
     public void sendClean(String sessionId) {
         var sessioin = sessions.get(sessionId);
         var deletedLines = containerService.clean(sessionId, sessioin.getCurrentPage());
-        var command = sessioin.getRole() == Role.TEACHER ? Command.TEACHER_CLEAN : Command.CLEAN;
+        var command = sessioin.getUserInfo().getRole() == Role.TEACHER ? Command.TEACHER_CLEAN : Command.CLEAN;
 
         sessions.values().forEach(session -> {
             session.sendMessage(command, deletedLines);

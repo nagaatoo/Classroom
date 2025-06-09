@@ -54,60 +54,6 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp" />
 
-        <!-- Выбор роли -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Выберите вашу роль:"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@color/black"
-            android:layout_marginBottom="12dp" />
-
-        <RadioGroup
-            android:id="@+id/roleRadioGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
-
-            <RadioButton
-                android:id="@+id/studentRadioButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Ученик"
-                android:textColor="@color/black"
-                android:checked="true" />
-
-            <RadioButton
-                android:id="@+id/teacherRadioButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Учитель"
-                android:textColor="@color/black" />
-
-        </RadioGroup>
-
-        <!-- Выбор комнаты -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Выберите комнату:"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@color/black"
-            android:layout_marginBottom="12dp" />
-
-        <Spinner
-            android:id="@+id/roomSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginBottom="24dp"
-            android:background="@drawable/spinner_background"
-            android:padding="16dp" />
-
         <!-- Кнопка входа -->
         <Button
             android:id="@+id/loginButton"
@@ -125,10 +71,10 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Введите ваше имя, выберите роль и комнату для подключения к виртуальному классу"
+        android:text="Введите ваше имя для подключения к виртуальному классу"
         android:textSize="14sp"
         android:textColor="@android:color/darker_gray"
         android:gravity="center"
         android:layout_marginTop="16dp" />
 
-</LinearLayout> 
+</LinearLayout>

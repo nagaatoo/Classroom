@@ -1,4 +1,4 @@
-package ru.numbdev.classroom.service;
+package ru.numbdev.classroom.service.impls;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +18,7 @@ import ru.numbdev.classroom.dto.LineBlock;
 import ru.numbdev.classroom.dto.LineOrder;
 import ru.numbdev.classroom.dto.Point;
 import ru.numbdev.classroom.dto.RoomWebSocketSession;
+import ru.numbdev.classroom.service.ContainerService;
 
 @Component
 @Scope("prototype")
@@ -51,7 +52,7 @@ public class SimpleContainerService implements ContainerService {
                                     .id(UUID.fromString(k))
                                     .sessionIdOwner(session.getSessionId())
                                     .userIdOwner(session.getUserId())
-                                    .role(session.getRole())
+                                    .role(session.getUserInfo().getRole())
                                     .created(block.getPoint().getTimestamp())
                                     .type(block.getType())
                                     .points(points)

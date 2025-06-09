@@ -16,6 +16,7 @@ import ru.numbdev.classroom.dto.Command;
 import ru.numbdev.classroom.dto.CommandFromRoom;
 import ru.numbdev.classroom.dto.RoomWebSocketSession;
 import ru.numbdev.classroom.service.RoomService;
+import ru.numbdev.classroom.service.UserService;
 
 @Slf4j
 @Component
@@ -24,10 +25,11 @@ public class RoomHandler implements WebSocketHandler {
 
     private final Gson gson;
     private final RoomService roomService;
+    private final UserService userService;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        roomService.registerRoomIfAbsent(RoomWebSocketSession.getInstanse(session, gson));
+        roomService.registerRoomIfAbsent(RoomWebSocketSession.getInstanse(session, userService.getUserInfo(session.getId()), gson));
     }
 
     @Override

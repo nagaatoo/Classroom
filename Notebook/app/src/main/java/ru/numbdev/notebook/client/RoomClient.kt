@@ -38,7 +38,7 @@ class RoomClient {
             try {
                 session = client.webSocketSession(
                     method = HttpMethod.Get,
-                    host = "192.168.50.166",
+                    host = "192.168.50.214",
 //                    host = "158.160.155.146",
                     port = 8081,
                     path = "/chat",

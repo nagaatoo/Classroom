@@ -51,10 +51,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupViewPager() {
         adapter = PaintPagesAdapter(this)
         viewPager.adapter = adapter
-        
+
         // Отключаем стандартное перелистывание ViewPager2
         viewPager.isUserInputEnabled = false
-        
+
         // Слушатель изменения страницы
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
                 // Реинициализируем PaintView для новой страницы
                 getCurrentFragment()?.reinitialize()
-                
+
                 updatePageIndicator(position)
                 RoomStateParams.currentPage = position
                 runBlocking {
@@ -114,7 +114,7 @@ class MainActivity : AppCompatActivity() {
     private fun goToNextPage() {
         val currentPosition = viewPager.currentItem
         val maxPosition = adapter.itemCount - 1
-        
+
         if (currentPosition == maxPosition) {
             // Создаем новую страницу
             val newPosition = adapter.addPage()
