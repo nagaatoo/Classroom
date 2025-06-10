@@ -27,7 +27,7 @@ public class ScheduledTaskService {
 
     public void addToSchedule(ScheduledContext context) {
         String contextKey = generateContextKey(context);
-        
+
         ScheduledFuture<?> future = virtualThreadScheduler.scheduleAtFixedRate(
             () -> {
                 try {
@@ -36,28 +36,28 @@ public class ScheduledTaskService {
                     log.error("Error in scheduled task for {}: {}", contextKey, e.getMessage(), e);
                 }
             },
-            0, 
+            0,
             50,
             TimeUnit.MILLISECONDS
         );
-        
+
         scheduledTasks.put(contextKey, future);
         log.info("Added task with virtual threads for: {}", contextKey);
     }
-    
+
     /**
      * Удаляет ScheduledContext из планировщика
      */
     public void removeFromSchedule(ScheduledContext context) {
         String contextKey = generateContextKey(context);
         ScheduledFuture<?> future = scheduledTasks.remove(contextKey);
-        
+
         if (future != null && !future.isCancelled()) {
             future.cancel(true);
             log.info("Task was deleted: {}", contextKey);
         }
     }
-    
+
     /**
      * Возвращает количество активных задач
      */
@@ -66,7 +66,7 @@ public class ScheduledTaskService {
                 .filter(future -> !future.isCancelled() && !future.isDone())
                 .count();
     }
-    
+
     /**
      * Останавливает все scheduled задачи
      */
@@ -79,7 +79,7 @@ public class ScheduledTaskService {
         scheduledTasks.clear();
         log.info("Stopped all tasks");
     }
-    
+
     /**
      * Проверяет, запущена ли задача для контекста
      */
@@ -88,16 +88,16 @@ public class ScheduledTaskService {
         ScheduledFuture<?> future = scheduledTasks.get(contextKey);
         return future != null && !future.isCancelled() && !future.isDone();
     }
-    
+
     private String generateContextKey(ScheduledContext context) {
         return context.getClass().getSimpleName() + "@" + context.getRoomId();
     }
-    
+
     @PreDestroy
     public void shutdown() {
         log.info("Stopping scheduler with virtual threads");
         stopAllTasks();
-        
+
         virtualThreadScheduler.shutdown();
         try {
             if (!virtualThreadScheduler.awaitTermination(5, TimeUnit.SECONDS)) {

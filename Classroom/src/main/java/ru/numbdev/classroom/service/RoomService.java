@@ -31,6 +31,7 @@ public class RoomService {
         RoomContext context;
         if (session.getRoomId() == null) {
             context = applicationContext.getBean(RoomContext.class);
+            context.setRoomId(UUID.randomUUID());
             roomTasks.put(context.getRoomId(), context);
             session.initRoomId(context.getRoomId());
         } else {

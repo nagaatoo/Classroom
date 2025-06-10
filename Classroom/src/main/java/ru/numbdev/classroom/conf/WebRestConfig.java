@@ -30,9 +30,10 @@ public class WebRestConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/user").permitAll()
+                        .requestMatchers("/user", "/chat").permitAll()
                         .anyRequest().authenticated())
-                .httpBasic(httpBasic -> {})
+                .httpBasic(httpBasic -> {
+                })
                 .authenticationProvider(authenticationProvider())
                 .build();
     }

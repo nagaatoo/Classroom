@@ -2,6 +2,7 @@ package ru.numbdev.classroom.dto;
 
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -37,7 +38,11 @@ public class RoomWebSocketSession {
 
     public UUID getRoomId() {
         if (roomId == null && session.getHandshakeHeaders().get(ROOM_ID_HEADER) != null) {
-            roomId = UUID.fromString(session.getHandshakeHeaders().get(ROOM_ID_HEADER).getFirst());
+            var roomIdFromHeader = session.getHandshakeHeaders().get(ROOM_ID_HEADER).getFirst();
+
+            if (StringUtils.isNotBlank(roomIdFromHeader) && !roomIdFromHeader.equals("null")) {
+                roomId = UUID.fromString(roomIdFromHeader);
+            }
         }
 
         return roomId;
