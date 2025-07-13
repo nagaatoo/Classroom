@@ -41,7 +41,6 @@ class PaintPageFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         paintView = view.findViewById(R.id.paintView)
-        reinitialize()
     }
 
     fun changeTool() {

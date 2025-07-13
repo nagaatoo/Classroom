@@ -198,7 +198,7 @@ class LineService {
             return Line(
                 currentLineId.toString(),
                 RoomStateParams.userId,
-                Role.STUDENT,
+                RoomStateParams.role,
                 currentTool,
                 mutableListOf(fillDrawPoint(touchX, touchY, order))
             )

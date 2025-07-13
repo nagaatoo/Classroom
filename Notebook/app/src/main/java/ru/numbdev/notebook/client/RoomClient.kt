@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import io.ktor.client.plugins.websocket.WebSocketException
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.header
@@ -11,6 +12,8 @@ import io.ktor.http.HttpMethod
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import ru.numbdev.notebook.dto.command.BaseCommand
 import ru.numbdev.notebook.dto.command.PingCommand
 import ru.numbdev.notebook.dto.command.PrintCommand
@@ -23,35 +26,38 @@ import java.util.UUID
 class RoomClient {
 
     companion object {
-
+        private val mutex = Mutex()
         private var session: DefaultClientWebSocketSession? = null
 
         suspend fun initClient() {
-            if (session != null) {
-                return
-            }
+            mutex.withLock {
+                if (session != null) {
+                    return
+                }
 
-            val client = HttpClient(CIO) {
-                install(WebSockets)
-            }
+                val client = HttpClient(CIO) {
+                    install(WebSockets)
+                }
 
-            try {
-                session = client.webSocketSession(
-                    method = HttpMethod.Get,
-                    host = "192.168.50.214",
-//                    host = "158.160.155.146",
-                    port = 8081,
-                    path = "/chat",
-                    {
-                        header("room_id", RoomStateParams.selectedRoomId.toString())
-                        header("user_id", RoomStateParams.userId)
-                    }
-                )
-            } catch (e: RuntimeException) {
-                println()
-            }
+                println("Ababa ${Thread.currentThread().getId()}")
+                try {
+                    session = client.webSocketSession(
+                        method = HttpMethod.Get,
+                        host = ClientConstsProperty.clientUrl,
+                        port = ClientConstsProperty.clientPort,
+                        path = "/chat",
+                        {
+                            header("room_id", RoomStateParams.selectedRoomId?.toString() ?: "")
+                            header("user_id", RoomStateParams.userId)
+                        }
+                    )
 
-            doPingJob()
+                    doPingJob()
+                } catch (e: RuntimeException) {
+                    println(e)
+                    throw WebSocketException("Cannot init: ${e.message}")
+                }
+            }
         }
 
         private fun doPingJob() {
@@ -59,7 +65,6 @@ class RoomClient {
                 override fun run() {
                     val ping = Gson().toJson(PingCommand(timestamp = System.currentTimeMillis()))
                     runBlocking { session?.outgoing?.send(Frame.Text(ping)) }
-                    println("ping")
                 }
             }, 10000, 1000)
         }

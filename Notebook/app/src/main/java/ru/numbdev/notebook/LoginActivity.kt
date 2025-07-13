@@ -48,8 +48,8 @@ class LoginActivity : AppCompatActivity() {
                         val roleText = if (RoomStateParams.isTeacher) "учителя" else "ученика"
                         Toast.makeText(this@LoginActivity, "Вход выполнен как $roleText: $username", Toast.LENGTH_LONG).show()
 
-                        // Переходим к главной активности
-                        val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                        // Переходим к выбору комнаты
+                        val intent = Intent(this@LoginActivity, RoomSelectionActivity::class.java)
                         startActivity(intent)
                         finish()
 

@@ -29,7 +29,11 @@ public class RoomHandler implements WebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        roomService.registerRoomIfAbsent(RoomWebSocketSession.getInstanse(session, userService.getUserInfo(session.getId()), gson));
+        roomService.registerRoomIfAbsent(
+                RoomWebSocketSession.getInstanse(
+                        session,
+                        userService.getUserInfo(RoomWebSocketSession.getUserId(session)),
+                        gson));
     }
 
     @Override

@@ -20,6 +20,6 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserInfo> authorize(@RequestBody UserAuthorizeDto userInfo) {
-        return ResponseEntity.ok(userService.getUserInfo(userInfo.getUserName()));
+        return ResponseEntity.ok(userService.autorization(userInfo.getUserName()));
     }
 }

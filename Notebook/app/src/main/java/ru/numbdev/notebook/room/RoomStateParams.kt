@@ -5,11 +5,11 @@ import java.util.UUID
 
 class RoomStateParams {
     companion object {
-        var userId = UUID.randomUUID().toString()
+        lateinit var userId: String
         var username: String = ""
         var isTeacher: Boolean = false
         var selectedRoomId: UUID? = null
         var currentPage: Int = 0
-        var role: Role? = null
+        lateinit var role: Role
     }
 }

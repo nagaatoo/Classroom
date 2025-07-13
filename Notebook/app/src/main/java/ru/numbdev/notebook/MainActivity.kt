@@ -8,9 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.viewpager2.widget.ViewPager2
-import kotlinx.coroutines.runBlocking
 import ru.numbdev.notebook.adapter.PaintPagesAdapter
-import ru.numbdev.notebook.client.RoomClient
 import ru.numbdev.notebook.fragment.PaintPageFragment
 import ru.numbdev.notebook.room.RoomStateParams
 
@@ -60,14 +58,11 @@ class MainActivity : AppCompatActivity() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
 
-                // Реинициализируем PaintView для новой страницы
-                getCurrentFragment()?.reinitialize()
-
                 updatePageIndicator(position)
                 RoomStateParams.currentPage = position
-                runBlocking {
-                    RoomClient.changePage(position)
-                }
+
+                // Реинициализируем PaintView для новой страницы
+                getCurrentFragment()?.reinitialize()
             }
         })
 

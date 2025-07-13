@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: Classroom
+
+  # PostgreSQL Configuration
+  # datasource:
+  #   url: jdbc:postgresql://localhost:5432/classroom
+  #   username: postgres
+  #   password: password
+  #   driver-class-name: org.postgresql.Driver
+
+  # # JPA Configuration
+  # jpa:
+  #   hibernate:
+  #     ddl-auto: none
+  #   show-sql: true
+  #   properties:
+  #     hibernate:
+  #       dialect: org.hibernate.dialect.PostgreSQLDialect
+  #       format_sql: true
+  #   defer-datasource-initialization: true
+
+  # # SQL Initialization
+  # sql:
+  #   init:
+  #     mode: always
+
+server:
+  port: 8081
+
+logging:
+  level:
+    org.springframework.web.servlet.DispatcherServlet: DEBUG
+    org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor: DEBUG
+    # org.hibernate.SQL: DEBUG
+    # org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+

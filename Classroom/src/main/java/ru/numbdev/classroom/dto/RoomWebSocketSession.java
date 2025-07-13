@@ -52,6 +52,10 @@ public class RoomWebSocketSession {
         return session.getHandshakeHeaders().get(USER_ID_HEADER).getFirst();
     }
 
+    public static String getUserId(WebSocketSession session) {
+        return session.getHandshakeHeaders().get(USER_ID_HEADER).getFirst();
+    }
+
     public void initRoomId(UUID roomId) {
         this.roomId = roomId;
     }

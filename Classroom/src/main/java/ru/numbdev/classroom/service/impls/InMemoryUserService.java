@@ -16,22 +16,50 @@ import ru.numbdev.classroom.service.UserService;
 @RequiredArgsConstructor
 public class InMemoryUserService implements UserService {
 
-    private static final Map<String, UserInfo> users = new HashMap<>();
+        private static final Map<String, UserInfo> users = new HashMap<>();
 
-    @PostConstruct
-    private void initForTest() {
-        users.put("user", UserInfo.builder().userId("4a747a34-dd76-478f-958e-eef957da362b").name("user").role(Role.STUDENT).build());
-        users.put("teacher", UserInfo.builder().userId("7aee1fea-04c7-4b72-be16-295a31951d9c").name("teacher").role(Role.TEACHER).build());
-    }
+        @PostConstruct
+        private void initForTest() {
+                users.put(
+                                "user",
+                                UserInfo.builder()
+                                                .userId("4a747a34-dd76-478f-958e-eef957da362b")
+                                                .name("user")
+                                                .role(Role.STUDENT)
+                                                .build());
+                users.put(
+                                "teacher",
+                                UserInfo.builder()
+                                                .userId("7aee1fea-04c7-4b72-be16-295a31951d9c")
+                                                .name("teacher")
+                                                .role(Role.TEACHER)
+                                                .build());
+        }
 
-    public UserInfo getUserInfo(String userName) {
-        return users.getOrDefault(
-                userName,
-                UserInfo.builder()
-                        .userId(UUID.randomUUID().toString())
-                        .name(userName)
-                        .role(Role.STUDENT)
-                        .build());
-    }
+        @Override
+        public UserInfo autorization(String userName) {
+                return users.getOrDefault(
+                                userName,
+                                UserInfo.builder()
+                                                .userId(UUID.randomUUID().toString())
+                                                .name(userName)
+                                                .role(Role.STUDENT)
+                                                .build());
+        }
+
+        @Override
+        public UserInfo getUserInfo(String userId) {
+                return users
+                                .entrySet()
+                                .stream()
+                                .filter(u -> u.getValue().getUserId().equals(userId))
+                                .map(Map.Entry::getValue)
+                                .findFirst()
+                                .orElseGet(() -> UserInfo.builder()
+                                                .userId(userId)
+                                                .name("guest")
+                                                .role(Role.STUDENT)
+                                                .build());
+        }
 
 }

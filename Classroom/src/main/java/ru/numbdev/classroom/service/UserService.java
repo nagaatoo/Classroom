@@ -4,6 +4,7 @@ import ru.numbdev.classroom.dto.UserInfo;
 
 public interface UserService {
 
-    UserInfo getUserInfo(String userName);
+    UserInfo autorization(String userName);
+    UserInfo getUserInfo(String userId);
 
 }

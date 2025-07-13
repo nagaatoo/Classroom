@@ -39,15 +39,12 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     init {
         isFocusable = true;
         setFocusableInTouchMode(true);
+        setBackgroundColor(Color.WHITE)
         setup()
-        runBlocking {
-            RoomClient.changePage(RoomStateParams.currentPage)
-        }
         viewTreeObserver.addOnGlobalLayoutListener { setupNote() }
     }
 
     private fun setup() {
-        setBackgroundColor(Color.WHITE)
         GlobalScope.launch {
             RoomClient.initClient()
             RoomClient.getSession()?.incoming?.consumeEach {
@@ -69,6 +66,10 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 }
 
                 postInvalidate()
+            }
+
+            runBlocking {
+                RoomClient.changePage(RoomStateParams.currentPage)
             }
         }
     }
@@ -146,8 +147,10 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
 
         isFocusable = true;
         setFocusableInTouchMode(true);
-        setup()
-        
+        setBackgroundColor(Color.WHITE)
+        runBlocking {
+            RoomClient.changePage(RoomStateParams.currentPage)
+        }
         // Принудительная перерисовка
         invalidate()
         
